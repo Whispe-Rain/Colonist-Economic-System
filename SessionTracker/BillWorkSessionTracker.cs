@@ -48,7 +48,6 @@ namespace EconomicSystem
 
             float before = session.workLeftAtStart;
             float after =initialWorkLeft;
-
             
             //某些工作中断后,工作量清零(切石，烹饪等)
             //通过判断该工作是否会生成半成品来判断

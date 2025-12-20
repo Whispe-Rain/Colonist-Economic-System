@@ -6,11 +6,12 @@ using Verse.AI;
 namespace EconomicSystem
 {
     /// <summary>
+    /// 处理有Bill的工作开始时的工作量(锻造，缝纫，制作)
     /// 在 Job 开始执行时记录 Bill 的初始 workLeft
     /// </summary>
     // 修改点：直接使用字符串 "SetupToils"
     [HarmonyPatch(typeof(JobDriver), "SetupToils")] 
-    public static class Patch_JobDriver_SetupToils
+    public static class Patch_DoBill_SetupToils
     {
         static void Postfix(JobDriver __instance)
         {
@@ -56,7 +57,7 @@ namespace EconomicSystem
                 }
                 
                 initialWorkLeft = recipe.WorkAmountForStuff(stuffDefToUse);
-                Log.Message($"开始全新工作或未绑定半成品Job: 总工作量:{initialWorkLeft / 60f} (总Ticks: {initialWorkLeft})"); 
+                Log.Message($"开始全新工作或未绑定半成品Job: 总工作量:{initialWorkLeft } (总Ticks: {initialWorkLeft})"); 
             }
             // 你的业务逻辑
             BillWorkSessionTracker.Begin(pawn, job,initialWorkLeft);

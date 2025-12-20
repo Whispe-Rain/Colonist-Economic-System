@@ -40,8 +40,17 @@
         <Reference Include="Assembly-CSharp">
           <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
+        <Reference Include="CashRegister">
+          <HintPath>..\..\..\..\..\workshop\content\294100\2952321484\1.6\Assemblies\CashRegister.dll</HintPath>
+        </Reference>
+        <Reference Include="Gastronomy">
+          <HintPath>..\..\..\..\..\workshop\content\294100\3509488152\1.6\Assemblies\Gastronomy.dll</HintPath>
+        </Reference>
         <Reference Include="HarmonyMod">
           <HintPath>D:\SteamLibrary\steamapps\workshop\content\294100\2009463077\Current\Assemblies\HarmonyMod.dll</HintPath>
+        </Reference>
+        <Reference Include="Hospitality">
+          <HintPath>..\..\..\..\..\workshop\content\294100\2952321484\1.6\Assemblies\Hospitality.dll</HintPath>
         </Reference>
         <Reference Include="System"/>
         <Reference Include="System.Core"/>
@@ -53,20 +62,56 @@
         <Reference Include="UnityEngine.CoreModule">
           <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
         </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+          <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+          <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+        </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="BillWorkSessionTracker.cs" />
-        <Compile Include="CES_ColonistEconomyData.cs" />
+        <Compile Include="CES_EconomyUtility.cs" />
+        <Compile Include="CES_PawnEconomyData.cs" />
         <Compile Include="CES_EconomyGameComponent.cs" />
         <Compile Include="CES_PawnEconomyExtension.cs" />
+        <Compile Include="DevMode\DebugActions_CES.cs" />
+        <Compile Include="EconomyUtility.cs" />
+        <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistCanAffordMeal.cs" />
+        <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistHasToPay.cs" />
+        <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_PayForMeal_VirtualWallet.cs" />
         <Compile Include="Harmony Patch\HarmonyInit.cs" />
-        <Compile Include="Harmony Patch\Patch_JobDriver_Cleanup.cs" />
-        <Compile Include="Harmony Patch\Patch_JobDriver_DriverTick.cs" />
-        <Compile Include="Harmony Patch\Patch_JobDriver_SetupToils.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Construction_Cleanup.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Construction_SetupToils.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Default_Cleanup.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_DoBill_Cleanup.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_DoBill_SetupToils.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Doctor_DoTend.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Hunting_Damage.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Mining_Cleanup.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Mining_SetupToils.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Research_Cleanup.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Research_SetupToils.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Conversion.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Enslave.cs" />
+        <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Recruit.cs" />
+        <Compile Include="Harmony Patch\Patch_Pawn_TickRare.cs" />
+        <Compile Include="ITab_Register_CES.cs" />
         <Compile Include="Main.cs" />
+        <Compile Include="MapComponent_ColonyEconomy.cs" />
+        <Compile Include="ModInitializer.cs" />
+        <Compile Include="PrivateItemData.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="WorkLaborModel.cs" />
-        <Compile Include="WorkValueCalculator.cs" />
+        <Compile Include="SessionTracker\BillWorkSessionTracker.cs" />
+        <Compile Include="SessionTracker\ConstructionWorkSessionTracker.cs" />
+        <Compile Include="SessionTracker\MiningWorkSessionTracker.cs" />
+        <Compile Include="SessionTracker\ResearchWorkSessionTracker.cs" />
+        <Compile Include="StoreShop\JobDriver_GoShopping.cs" />
+        <Compile Include="StoreShop\JoyGiver_ColonistShopping.cs" />
+        <Compile Include="StoreShop\ShoppingUtility.cs" />
+        <Compile Include="ThoughtWorker_AffluentLife.cs" />
+        <Compile Include="ThoughtWorker_UnpaidWage.cs" />
+        <Compile Include="Visual\ITab_Pawn_Economy.cs" />
+        <Compile Include="WageProcessor.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -76,5 +121,9 @@
     <Target Name="AfterBuild">
     </Target>
     -->
-
+    <Target Name="AfterBuild">
+        <Copy Condition="'$(Configuration)'=='Debug'"
+              SourceFiles="$(OutputPath)$(AssemblyName).dll"
+              DestinationFolder="D:\SteamLibrary\steamapps\common\RimWorld\Mods\Economic System\1.6\Assemblies\" />
+    </Target>
 </Project>

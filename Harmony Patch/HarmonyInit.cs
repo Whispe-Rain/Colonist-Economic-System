@@ -1,4 +1,5 @@
 using HarmonyLib;
+using RimWorld;
 using Verse;
 
 namespace EconomicSystem
@@ -12,4 +13,5 @@ namespace EconomicSystem
             harmony.PatchAll();
         }
     }
+    
 }
