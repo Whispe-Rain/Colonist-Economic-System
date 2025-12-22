@@ -17,6 +17,7 @@ namespace EconomicSystem
             {
                 return 0f;
             }
+            
             // 2. 经济检查
             var econ = pawn.GetEconomyData();
             // 检查虚拟余额是否足以进行任何购物

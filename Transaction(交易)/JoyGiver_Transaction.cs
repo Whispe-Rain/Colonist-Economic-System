@@ -38,7 +38,7 @@ namespace EconomicSystem
             float baseShoppingChance = 0.25f; 
             
             //财富值越高越不容易售卖物品，反之越容易出售物品
-            float walletScale = Mathf.InverseLerp(2000f, 100f, data.virtualWallet); 
+            float walletScale = Mathf.InverseLerp(3000f, 50f, data.virtualWallet); 
     
             // 将 0~1 的 walletScale 映射到 0.5~2.0 的因子范围 (线性映射)
             float walletFactor = 0.5f + walletScale * 1.5f; 
@@ -81,8 +81,10 @@ namespace EconomicSystem
                     continue; // 无法预定，尝试下一个角色
                 }
                 
-                //客户的钱包必须要能支付的起该商品市场价1.25倍并且在40格范围内
-                if (customer.GetEconomyData().virtualWallet<Goods.def.BaseMarketValue*1.25||
+                float estimatedValue =
+                    Goods.MarketValue * GoodsData.stackCount * 2f;
+                //客户的钱包必须要能支付的起该商品市场价2倍并且在40格范围内
+                if (customer.GetEconomyData().virtualWallet<estimatedValue||
                     !pawn.Position.InHorDistOf(customer.Position, MaxTradeDistance)
                     )
                 {
@@ -97,6 +99,7 @@ namespace EconomicSystem
                 return null;
                    
             }
+            Log.Message("潜在客户数量："+customers);
             // 3.随机选择一个初始目标 (作为 Job 的 TargetA)
             Pawn initTarget = customers.RandomElement();
             

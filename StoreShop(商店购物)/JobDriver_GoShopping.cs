@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using HarmonyLib;
 using System.Linq;
+using Hospitality.Utilities;
 
 namespace EconomicSystem
 {
@@ -16,7 +17,7 @@ namespace EconomicSystem
         private const int TicksToPay = 90;
 
         private Thing TargetItem => TargetA.Thing;
-
+        
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             var econ = pawn.GetEconomyData();
@@ -53,9 +54,12 @@ namespace EconomicSystem
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
+            
+            
             // 确保 Job 的目标物品仍然有效且可达
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOn(() => !pawn.CanReach(TargetItem, PathEndMode.ClosestTouch, Danger.Some));
+            
 
             // 假设 Pawn 的 Job 目标 A 是最终要购买的商品
             Thing finalTarget = TargetItem;
@@ -196,6 +200,7 @@ namespace EconomicSystem
 
             // --- 12. 拿取商品 (Virtualize) --- (Index 3)
             yield return Toil_TakeItem();
+            
         }
 
         // --- Toil 辅助方法 ---
@@ -292,6 +297,7 @@ namespace EconomicSystem
                     Log.Message(
                         $"[CES_DEBUG] Take Item SUCCESS: {pawn.NameShortColored} successfully virtualized {itemToVirtualize.LabelCap} as private asset.");
 
+                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"购买{itemToVirtualize.LabelCap.Colorize(Color.cyan)}成功",Color.green));
                     // ⭐ 关键修改：直接在这里结束 Job，不进入下一个 Toil
                     this.EndJobWith(JobCondition.Succeeded);
                 }

@@ -65,7 +65,6 @@ namespace EconomicSystem
 
             foreach (Pawn pawn in map.mapPawns.FreeColonists)
             {
-                
                 ProcessPawnWage(pawn, economy);
             }
         }
@@ -105,7 +104,6 @@ namespace EconomicSystem
             else
             {
                 data.AddUnpaid(wageToPay);
-                // ❗ 不清 workValueByType
 
                 Log.Warning(
                     $"[CES] Unpaid wage | {pawn.NameShortColored} owed {wageToPay}"

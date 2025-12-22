@@ -74,6 +74,7 @@
         <Compile Include="CES\CES_EconomyUtility.cs" />
         <Compile Include="CES\CES_PawnEconomyData.cs" />
         <Compile Include="CES\CES_PawnEconomyExtension.cs" />
+        <Compile Include="CES\EconomicLogEntry.cs" />
         <Compile Include="CES\EconomyUtility.cs" />
         <Compile Include="CES\MapComponent_ColonyEconomy.cs" />
         <Compile Include="CES\PrivateItemData.cs" />

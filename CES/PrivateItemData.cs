@@ -18,6 +18,9 @@ namespace EconomicSystem
 
         // 默认构造函数 (用于 Scribe)
         public PrivateItemData() { }
+        
+        //得到物品的具体名字
+        public TaggedString Name => this.RecreateThing().def.LabelCap;
 
         // 从现有 Thing 实例化的构造函数
         public PrivateItemData(Thing t)

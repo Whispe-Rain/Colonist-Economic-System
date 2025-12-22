@@ -9,7 +9,7 @@ namespace EconomicSystem
     // 该 JobDriver 负责殖民者前往商队Pawn并与之进行虚拟交易(外贸)
     public class JobDriver_ForeignTrade : JobDriver
     {
-        // TargetIndex.A 始终指向商队Pawn (TargetA)
+        // TargetIndex.A 始终指向目标Pawn (TargetA)
         private const TargetIndex TargetTrader = TargetIndex.A;
 
         // 模拟交谈的持续时间（Ticks），例如 600 Ticks 约 10 秒
@@ -48,6 +48,17 @@ namespace EconomicSystem
             // ⭐ 新增 Toil 1.5：拿起虚拟物品并实例化 (Make Thing and Carry)
             yield return Toils_General.Do(delegate
             {
+                
+                
+                // ⭐ 如果已经有视觉物品，就不要再生成
+                Thing visualThing = job.GetTarget(TargetIndex.B).Thing;
+                if (visualThing != null && pawn.carryTracker?.CarriedThing == visualThing)
+                {
+                    // Pawn 正在拿这个 Job 的视觉物品
+                    return;
+                }
+
+                
                 // 2. 找到并从 Pawn 的私人资产中移除（防止交易中途卖掉）
                 CES_PawnEconomyData data = this.pawn.GetEconomyData();
                 PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == ItemDefName);
@@ -57,9 +68,14 @@ namespace EconomicSystem
                     this.EndJobWith(JobCondition.Errored);
                     return;
                 }
-
+                
                 // 3. 实例化 Thing (临时创建实体)
                 Thing sellingItem = itemData.RecreateThing();
+                //（关键）设置该物体掉落及销毁
+                sellingItem.def.destroyOnDrop = true;
+                
+                job.SetTarget(TargetIndex.B, sellingItem);
+                
                 if (sellingItem == null)
                 {
                     this.EndJobWith(JobCondition.Errored);

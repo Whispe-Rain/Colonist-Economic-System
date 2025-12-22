@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hospitality.Utilities;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -67,6 +68,10 @@ namespace EconomicSystem
             // ⭐ 新增 Toil 1.5：拿起虚拟物品并实例化 (Make Thing and Carry)
             yield return Toils_General.Do(delegate
             {
+                // ⭐ 如果已经有视觉物品，就不要再生成
+                if (job.GetTarget(TargetIndex.B).Thing != null)
+                    return;
+                
                 // 2. 找到并从 Pawn 的私人资产中移除（防止交易中途卖掉）
                 CES_PawnEconomyData data = this.pawn.GetEconomyData();
                 PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == ItemDefName);
@@ -79,12 +84,13 @@ namespace EconomicSystem
 
                 // 3. 实例化 Thing (临时创建实体)
                 Thing sellingItem = itemData.RecreateThing();
+                sellingItem.def.destroyOnDrop = true;
+                job.SetTarget(TargetIndex.B, sellingItem);
                 if (sellingItem == null)
                 {
                     this.EndJobWith(JobCondition.Errored);
                     return;
                 }
-
                 // 4. 关键：Pawn 拿起物品
                 this.pawn.carryTracker.TryStartCarry(sellingItem);
 
@@ -136,24 +142,9 @@ namespace EconomicSystem
 
                 // 尝试执行交易逻辑
                 ExecuteTradeAndSettle(pawn, TargetPawn, data, ItemDefName);
+                
                 // 无论成功与否，Job 都视为完成
                 this.EndJobWith(JobCondition.Succeeded);
-            });
-            
-            this.AddEndCondition(delegate
-            {
-                if (this.pawn.Dead || this.pawn.Downed || this.pawn.Drafted || this.pawn.InMentalState)
-                {
-                    // ❗ 只留失败判断。清理由 Harmony 负责。
-                    // 如果 Harmony 没有触发，说明 Job 失败不是由丢弃引起，但物品仍需清理。
-                    // 我们可以信任 JobDriver 在结束时清理 Target B。
-        
-                    // 如果您不放心，可以在这里添加一个安全检查：
-                    // if(this.job.GetTarget(TargetIndex.B).Thing != null) { this.DropAndDestroyCarriedThing(this.pawn); }
-        
-                    return JobCondition.Incompletable;
-                }
-                return JobCondition.Ongoing; 
             });
 
 
@@ -163,6 +154,10 @@ namespace EconomicSystem
         // 辅助方法：执行交易和结算
         private void ExecuteTradeAndSettle(Pawn pawn, Pawn targetPawn, CES_PawnEconomyData data, string defName)
         {
+            
+            // 获取 Toil 1.5 中拿起的物品
+            Thing carriedThing = (Thing)job.GetTarget(TargetIndex.B).Thing; // ⭐ 确保拿到正确的实例
+            
             // 1. 找到并移除待售的 PrivateItemData
             PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == defName);
 
@@ -189,9 +184,9 @@ namespace EconomicSystem
             // 2.5. 随机判定交易是否成功
             if (Rand.Chance(0.30f)) // 30% 概率被殖民者拒绝购买
             {
-                recreatedThing.Destroy(); // 销毁临时 Thing
+                //recreatedThing.Destroy(); // 销毁临时 Thing
                 MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "TradeFailed".Translate(), Color.red, 3f);
-                return;
+                return ;
             }
 
             // 3. 计算价格
@@ -202,17 +197,26 @@ namespace EconomicSystem
 
             // 4. 计算税收 (10% 商业税)
             int taxAmount = Mathf.CeilToInt(salePrice * 0.10f);
+            //卖家到手的钱
             int netIncome = salePrice - taxAmount;
-
+            
             // 5. 执行结算操作
             // A. 移除虚拟物品
             data.RemoveAsset(itemData);
 
-            //为买家添加物品
-            if (targetPawn.GetEconomyData().AddAsset(itemData))
+            //买家添加物品并付钱给买家
+            if (targetPawn.GetEconomyData().AddAsset(itemData))//相当于货到付款
             {
+                //生成购买日志
+                targetPawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"从{pawn.NameShortColored}手中购买了{itemData.Name.Colorize(Color.yellow)}"));
+                
+                //生成售卖日志
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"将{itemData.Name.Colorize(Color.yellow)}卖给了{targetPawn.NameShortColored}"));
+                
                 // B. 增加虚拟货币
+                targetPawn.GetEconomyData().virtualWallet -= salePrice;
                 data.AddMoney(netIncome);
+               
             }
 
             // C. 生成实体白银税收
@@ -233,9 +237,6 @@ namespace EconomicSystem
 
             Log.Message(
                 $"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
-
-            // 销毁临时 Thing (必须在所有计算完成后进行)
-            recreatedThing.Destroy();
         }
         
         private void OnJobFinished(JobCondition condition)

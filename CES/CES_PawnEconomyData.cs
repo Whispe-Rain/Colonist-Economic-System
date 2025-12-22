@@ -11,7 +11,7 @@ namespace EconomicSystem
     public class CES_PawnEconomyData : IExposable
     {
         /// <summary>
-        /// 殖民者的虚拟钱包余额
+        /// 殖民者的钱包余额
         /// </summary>
         public float virtualWallet;
 
@@ -27,16 +27,20 @@ namespace EconomicSystem
         /// </summary>
         public Dictionary<WorkTypeDef, float> workValueByType =
             new Dictionary<WorkTypeDef, float>();
-        
+
         /// 殖民者的私人物品列表
         public List<PrivateItemData> privateOwnedAssets = new List<PrivateItemData>();
-        
-        
+
+        //殖民者的经济信息记录
+        public List<EconomicLogEntry> economicHistory = new List<EconomicLogEntry>();
+
+
         // 利息
         // 每日回馈率 (0.005f = 0.5% 每日)
-        private const float DailyInterestRate = 0.005f; 
+        private const float DailyInterestRate = 0.005f;
+
         // 上次计算回馈的日期（以游戏天数计算）
-        private int lastInterestDay = 0; 
+        private int lastInterestDay = 0;
 
         #region 存档
 
@@ -54,18 +58,27 @@ namespace EconomicSystem
             );
             // ⭐ 更改存档逻辑以使用新的 PrivateItemData 列表
             Scribe_Collections.Look(
-                ref privateOwnedAssets, 
-                "privateOwnedAssets", 
+                ref privateOwnedAssets,
+                "privateOwnedAssets",
                 LookMode.Deep // 必须使用 Deep 模式来存档复杂对象
             );
-            
+
             Scribe_Values.Look(ref lastInterestDay, "lastInterestDay", 0);
-            
+
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 privateOwnedAssets ??= new List<PrivateItemData>();
             }
-            
+
+            // 【关键修复】：确保列表的 Scribe 逻辑
+            Scribe_Collections.Look(ref this.economicHistory, "economicHistory", LookMode.Deep);
+
+            // 【安全检查】：如果加载失败，列表可能是 null，我们必须初始化它
+            if (Scribe.mode == LoadSaveMode.LoadingVars && this.economicHistory == null)
+            {
+                this.economicHistory = new List<EconomicLogEntry>();
+            }
+
         }
 
         #endregion
@@ -93,6 +106,7 @@ namespace EconomicSystem
 
             unpaidWage += amount;
         }
+
         /// <summary>
         /// 扣除虚拟钱包余额
         /// </summary>
@@ -156,7 +170,7 @@ namespace EconomicSystem
         {
             if (!workValueByType.ContainsKey(workType) || workValueByType[workType] < 0f)
                 return 0f;
-            return workValueByType[workType]*GetWageFactor(workType);
+            return workValueByType[workType] * GetWageFactor(workType);
         }
 
         /// <summary>
@@ -167,7 +181,7 @@ namespace EconomicSystem
         private float GetWageFactor(WorkTypeDef workType)
         {
             // 示例规则（你可以随时改）
-            
+
             //研究价值
             if (workType == WorkTypeDefOf.Research)
                 return 1.5f;
@@ -187,33 +201,33 @@ namespace EconomicSystem
             //狩猎价值
             if (workType == WorkTypeDefOf.Hauling)
                 return 1.2f;
-            
+
             //监管价值
-            if (workType==WorkTypeDefOf.Warden)
+            if (workType == WorkTypeDefOf.Warden)
                 return 1f;
             //医疗价值
-            if (workType==WorkTypeDefOf.Doctor)
+            if (workType == WorkTypeDefOf.Doctor)
                 return 1.5f;
             //制作/烹饪价值
-            if (workType==WorkTypeDefOf.Crafting)
+            if (workType == WorkTypeDefOf.Crafting)
                 return 0.8f;
             //锻造价值
-            if (workType==WorkTypeDefOf.Smithing)
+            if (workType == WorkTypeDefOf.Smithing)
                 return 1f;
             //割除价值
-            if (workType==WorkTypeDefOf.PlantCutting)
+            if (workType == WorkTypeDefOf.PlantCutting)
                 return 0.7f;
             //种植价值
-            if (workType==WorkTypeDefOf.Growing)
+            if (workType == WorkTypeDefOf.Growing)
                 return 1.3f;
             //钓鱼价值
-            if (workType==WorkTypeDefOf.Fishing)
+            if (workType == WorkTypeDefOf.Fishing)
                 return 1.5f;
 
             // 默认工资系数
             return 0.4f;
         }
-        
+
         public void AddWork(WorkTypeDef workType, float value)
         {
             if (workType == null || value <= 0f)
@@ -242,9 +256,12 @@ namespace EconomicSystem
                     unpaidwageCount = 200f;
                     break;
             }
+
             return unpaidwageCount;
         }
+
         #endregion
+
         #region 物品绑定操作 (新的虚拟化操作)
 
         /// <summary>
@@ -253,10 +270,10 @@ namespace EconomicSystem
         public void VirtualAndMarkAsset(Thing item)
         {
             if (item == null) return;
-    
+
             // 1. 创建资产数据
             PrivateItemData asset = new PrivateItemData(item);
-    
+
             // 2. 添加到列表
             privateOwnedAssets.Add(asset);
 
@@ -268,10 +285,11 @@ namespace EconomicSystem
             else if (item.holdingOwner != null)
             {
                 // 从库存/容器中移除 (例如，如果 itemToTransfer 是 SplitOff 得到的临时对象)
-                item.holdingOwner.Remove(item); 
+                item.holdingOwner.Remove(item);
             }
-    
-            Log.Message($"[CES_ASSET] Virtualized and destroyed item {item.LabelCap} (Count: {item.stackCount}). Total assets: {privateOwnedAssets.Count}.");
+
+            Log.Message(
+                $"[CES_ASSET] Virtualized and destroyed item {item.LabelCap} (Count: {item.stackCount}). Total assets: {privateOwnedAssets.Count}.");
         }
 
         // 示例：从私有资产中移除一个项目 (用于出售或使用)
@@ -284,15 +302,16 @@ namespace EconomicSystem
         {
             int i = privateOwnedAssets.Count;
             this.privateOwnedAssets.Add(asset);
-            if (privateOwnedAssets.Count>i)
+            if (privateOwnedAssets.Count > i)
             {
                 return true;
             }
+
             return false;
         }
-        
+
         #endregion
-        
+
         /// <summary>
         /// 检查并应用每日安全保管费回馈，将虚拟资金注入钱包。
         /// </summary>
@@ -316,13 +335,13 @@ namespace EconomicSystem
 
             // 计算回馈金额（这是凭空产生的虚拟货币）
             float interestAmount = virtualWallet * DailyInterestRate;
-            
+
             // 利息/回馈入账
             virtualWallet += interestAmount;
 
             // 更新日志
             lastInterestDay = currentDay;
-            
+
         }
     }
 }
