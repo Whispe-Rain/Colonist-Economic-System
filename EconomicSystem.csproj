@@ -70,12 +70,17 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="CES_EconomyUtility.cs" />
-        <Compile Include="CES_PawnEconomyData.cs" />
-        <Compile Include="CES_EconomyGameComponent.cs" />
-        <Compile Include="CES_PawnEconomyExtension.cs" />
+        <Compile Include="CES\CES_EconomyGameComponent.cs" />
+        <Compile Include="CES\CES_EconomyUtility.cs" />
+        <Compile Include="CES\CES_PawnEconomyData.cs" />
+        <Compile Include="CES\CES_PawnEconomyExtension.cs" />
+        <Compile Include="CES\EconomyUtility.cs" />
+        <Compile Include="CES\MapComponent_ColonyEconomy.cs" />
+        <Compile Include="CES\PrivateItemData.cs" />
+        <Compile Include="CES\WageProcessor.cs" />
         <Compile Include="DevMode\DebugActions_CES.cs" />
-        <Compile Include="EconomyUtility.cs" />
+        <Compile Include="ForeignTrade(外贸)\JobDriver_ForeignTrade.cs" />
+        <Compile Include="ForeignTrade(外贸)\WorkGiver_ForeignTrade.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistCanAffordMeal.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistHasToPay.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_PayForMeal_VirtualWallet.cs" />
@@ -95,23 +100,22 @@
         <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Enslave.cs" />
         <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Recruit.cs" />
         <Compile Include="Harmony Patch\Patch_Pawn_TickRare.cs" />
-        <Compile Include="ITab_Register_CES.cs" />
         <Compile Include="Main.cs" />
-        <Compile Include="MapComponent_ColonyEconomy.cs" />
-        <Compile Include="ModInitializer.cs" />
-        <Compile Include="PrivateItemData.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="SessionTracker\BillWorkSessionTracker.cs" />
         <Compile Include="SessionTracker\ConstructionWorkSessionTracker.cs" />
         <Compile Include="SessionTracker\MiningWorkSessionTracker.cs" />
         <Compile Include="SessionTracker\ResearchWorkSessionTracker.cs" />
-        <Compile Include="StoreShop\JobDriver_GoShopping.cs" />
-        <Compile Include="StoreShop\JoyGiver_ColonistShopping.cs" />
-        <Compile Include="StoreShop\ShoppingUtility.cs" />
-        <Compile Include="ThoughtWorker_AffluentLife.cs" />
-        <Compile Include="ThoughtWorker_UnpaidWage.cs" />
-        <Compile Include="Visual\ITab_Pawn_Economy.cs" />
-        <Compile Include="WageProcessor.cs" />
+        <Compile Include="StoreShop(商店购物)\JobDriver_GoShopping.cs" />
+        <Compile Include="StoreShop(商店购物)\JoyGiver_ColonistShopping.cs" />
+        <Compile Include="StoreShop(商店购物)\ShoppingUtility.cs" />
+        <Compile Include="Thought(心情，状态)\ThoughtWorker_AffluentLife.cs" />
+        <Compile Include="Thought(心情，状态)\ThoughtWorker_UnpaidWage.cs" />
+        <Compile Include="Transaction(交易)\JobDriver_GoTrading.cs" />
+        <Compile Include="Transaction(交易)\JoyGiver_Transaction.cs" />
+        <Compile Include="Transaction(交易)\TransactionUtility.cs" />
+        <Compile Include="UI\ITab_Pawn_Economy.cs" />
+        <Compile Include="UI\ModInitializer.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

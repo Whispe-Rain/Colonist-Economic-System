@@ -32,11 +32,9 @@ namespace EconomicSystem
             // 4. 最终过滤和安全检查
             allItems = allItems.Where(t => 
             {
-                // =======================================================
                 // 【新增检查：排除所有被打包的物品 (MinifiedThing)】
                 if (t is MinifiedThing) 
                     return false;
-                // =======================================================
 
                 // 1. 基础检查
                 if (t.MarketValue <= 0f || t.IsForbidden(pawn) || t.IsBurning() || t.def.tradeability == Tradeability.None)

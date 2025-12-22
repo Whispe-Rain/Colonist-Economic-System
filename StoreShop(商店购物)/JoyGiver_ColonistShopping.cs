@@ -12,8 +12,11 @@ namespace EconomicSystem
     {
         public override float GetChance(Pawn pawn)
         {
-            // ... (1. 基础检查 和 2. 经济检查 保持不变) ...
-
+            //只对殖民者有效
+            if (pawn==null||!pawn.IsColonist)
+            {
+                return 0f;
+            }
             // 2. 经济检查
             var econ = pawn.GetEconomyData();
             // 检查虚拟余额是否足以进行任何购物
@@ -33,12 +36,12 @@ namespace EconomicSystem
 
             // 4. 计算概率
     
-            //基础购物概率10%
-            float baseShoppingChance = 0.10f; 
+            //基础购物概率25%
+            float baseShoppingChance = 0.25f; 
     
             // 假设：在 15银时因子为 0.5，在 5000银时因子为 2.0 (您可以根据需要调整最大/最小影响)
             // Mathf.InverseLerp(min, max, value) 返回 0.0 到 1.0 之间的值
-            float walletScale = Mathf.InverseLerp(15f, 5000f, econ.virtualWallet); 
+            float walletScale = Mathf.InverseLerp(15f, 2000f, econ.virtualWallet); 
     
             // 将 0~1 的 walletScale 映射到 0.5~2.0 的因子范围 (线性映射)
             float walletFactor = 0.5f + walletScale * 1.5f; 

@@ -279,6 +279,17 @@ namespace EconomicSystem
         {
             return privateOwnedAssets.Remove(asset);
         }
+
+        public bool AddAsset(PrivateItemData asset)
+        {
+            int i = privateOwnedAssets.Count;
+            this.privateOwnedAssets.Add(asset);
+            if (privateOwnedAssets.Count>i)
+            {
+                return true;
+            }
+            return false;
+        }
         
         #endregion
         

@@ -7,7 +7,6 @@ namespace EconomicSystem
     // 核心：将银币存入殖民地 (Pawn -> Map)
     public static class EconomyUtility
     {
-       
         /// <summary>
         /// Pawn 将银币存入殖民地 (从 Pawn 钱包取出，在地图上生成银币堆)
         /// </summary>
