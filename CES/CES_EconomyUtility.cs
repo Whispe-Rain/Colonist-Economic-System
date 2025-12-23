@@ -1,10 +1,11 @@
-// 文件: CES_EconomyUtility.cs (最简化的、鲁棒的白银查找)
+
 
 using System.Collections.Generic;
 using Verse;
 using RimWorld;
 using System.Linq;
 
+//殖民地工具类
 namespace EconomicSystem
 {
     public static class CES_EconomyUtility
@@ -73,5 +74,27 @@ namespace EconomicSystem
             }
             return true;
         }
+        /// <summary>
+        /// 通过计算殖民地财富来得到合理的工资系数
+        /// 每增加1000财富，工资系数提高0.05
+        /// </summary>
+        /// <param name="map">当前地图</param>
+        /// <returns></returns>
+        public static float GetCorrection(Map map)
+        {
+            float totalCorrection = 0.2f;
+            //如果不是玩家地图，强制使用玩家地图结算
+            if (!map.IsPlayerHome)
+            {
+                map = Find.AnyPlayerHomeMap;
+            }
+            
+            for (int i = 0; i < (int)map.wealthWatcher.WealthTotal/3000; i++)
+            {
+                totalCorrection+=0.05f;
+            }
+            return totalCorrection;
+        }                        
+        
     }
 }

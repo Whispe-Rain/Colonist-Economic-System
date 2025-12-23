@@ -33,7 +33,7 @@ namespace EconomicSystem
 
         //殖民者的经济信息记录
         public List<EconomicLogEntry> economicHistory = new List<EconomicLogEntry>();
-
+        
 
         // 利息
         // 每日回馈率 (0.005f = 0.5% 每日)
@@ -48,7 +48,6 @@ namespace EconomicSystem
         {
             Scribe_Values.Look(ref virtualWallet, "virtualWallet", 0f);
             Scribe_Values.Look(ref unpaidWage, "unpaidWage", 0f);
-
             Scribe_Collections.Look(
 
                 ref workValueByType,
@@ -158,7 +157,7 @@ namespace EconomicSystem
                 totalWage += workAmount * wageFactor;
             }
 
-            return totalWage;
+            return totalWage*CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
         }
 
         /// <summary>
@@ -181,7 +180,6 @@ namespace EconomicSystem
         private float GetWageFactor(WorkTypeDef workType)
         {
             // 示例规则（你可以随时改）
-
             //研究价值
             if (workType == WorkTypeDefOf.Research)
                 return 1.5f;
@@ -207,13 +205,13 @@ namespace EconomicSystem
                 return 1f;
             //医疗价值
             if (workType == WorkTypeDefOf.Doctor)
-                return 1.5f;
+                return 1.7f;
             //制作/烹饪价值
             if (workType == WorkTypeDefOf.Crafting)
                 return 0.8f;
             //锻造价值
             if (workType == WorkTypeDefOf.Smithing)
-                return 1f;
+                return 1.2f;
             //割除价值
             if (workType == WorkTypeDefOf.PlantCutting)
                 return 0.7f;
@@ -225,7 +223,7 @@ namespace EconomicSystem
                 return 1.5f;
 
             // 默认工资系数
-            return 0.4f;
+            return 0.3f;
         }
 
         public void AddWork(WorkTypeDef workType, float value)

@@ -26,7 +26,7 @@ namespace EconomicSystem
                 .SelectMany(t => ((IThingHolder)t).GetDirectlyHeldThings()));
             
             // 3. 将待搬运列表中的物品也包括进来，以防有散落在地上的物品
-            allItems = allItems.Concat(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
+            //allItems = allItems.Concat(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
 
 
             // 4. 最终过滤和安全检查

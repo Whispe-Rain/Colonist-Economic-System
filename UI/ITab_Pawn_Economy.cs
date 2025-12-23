@@ -117,10 +117,17 @@ namespace EconomicSystem
                 $"欠薪：{data.unpaidWage:F0}");
             curY += lineHeight;
 
+            float Correction = CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
+            Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
+                $"工资系数:{Correction}");
+            curY += lineHeight;
+            
             float totalWage = data.CalculatePendingWage();
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
                 $"待发工资：{totalWage:F0}");
             curY += lineHeight + 6f;
+            
+           
 
             // --- 分隔线 ---
             Widgets.DrawLineHorizontal(rect.x, curY, rect.width);
@@ -128,7 +135,7 @@ namespace EconomicSystem
 
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight), "工资构成");
             curY += lineHeight;
-
+            
             // ===== ScrollView 准备 =====
             Rect scrollRect = new Rect(
                 rect.x,
@@ -197,7 +204,7 @@ namespace EconomicSystem
                     row.height - 12f
                 );
 
-                float pct = totalWage > 0f ? wage / totalWage : 0f;
+                float pct = totalWage*Correction > 0f ? wage / totalWage*Correction : 0f;
                 Widgets.FillableBar(barRect, pct);
                 Widgets.DrawBox(barRect);
 

@@ -179,8 +179,9 @@ namespace EconomicSystem
 
             // 5. 执行结算操作
 
-            // A. 移除虚拟物品
+            // A. 殖民者移除虚拟物品,并在商队小人的背包中加入该物品
             data.privateOwnedAssets.Remove(itemData);
+            TraderPawn.inventory.innerContainer.TryAdd(recreatedThing);
 
             // B. 增加虚拟货币
             data.AddMoney(netIncome);

@@ -22,6 +22,8 @@ namespace EconomicSystem
         // 上一次结算的天数
         private int lastProcessedDay = -1;
 
+        //工资补正
+        private float correction = 0.2f;
         
         
         public WageProcessor(Map map) : base(map)
@@ -32,6 +34,7 @@ namespace EconomicSystem
         {
             base.ExposeData();
             Scribe_Values.Look(ref lastProcessedDay, "lastProcessedDay", -1);
+            Scribe_Values.Look(ref correction, "correction", 0.2f);
         }
 
         public override void MapComponentTick()
@@ -79,7 +82,7 @@ namespace EconomicSystem
                 return;
 
             float rawWage = data.CalculatePendingWage();
-            int wageToPay = Mathf.FloorToInt(rawWage);
+            int wageToPay = Mathf.FloorToInt(rawWage*CES_EconomyUtility.GetCorrection(map));
 
             if (wageToPay <= 0)
                 return;
@@ -111,6 +114,7 @@ namespace EconomicSystem
             }
         }
 
+        
     }
     
 }

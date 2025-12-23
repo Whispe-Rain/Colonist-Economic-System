@@ -30,7 +30,6 @@ namespace EconomicSystem
             defName = t.def.defName;
             stackCount = t.stackCount;
             hitPointsPct = (float)t.HitPoints / t.MaxHitPoints;
-
             // 获取品质
             if (t.TryGetQuality(out QualityCategory qc))
             {

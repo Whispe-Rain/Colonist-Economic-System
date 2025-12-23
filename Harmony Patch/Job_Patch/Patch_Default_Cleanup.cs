@@ -71,7 +71,7 @@ namespace EconomicSystem
             {
                 data.workValueByType[workType] = 0f;
             }
-            data.workValueByType[workType] += 0.2f;
+            data.workValueByType[workType] += 1;
 
             Log.Message(
                 $"[CES] 工作完成 | Pawn={pawn.NameShortColored} | " +

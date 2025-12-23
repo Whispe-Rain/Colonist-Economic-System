@@ -80,6 +80,7 @@
         <Compile Include="CES\PrivateItemData.cs" />
         <Compile Include="CES\WageProcessor.cs" />
         <Compile Include="DevMode\DebugActions_CES.cs" />
+        <Compile Include="ForeignTrade(外贸)\ForeignTradeUtility.cs" />
         <Compile Include="ForeignTrade(外贸)\JobDriver_ForeignTrade.cs" />
         <Compile Include="ForeignTrade(外贸)\WorkGiver_ForeignTrade.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistCanAffordMeal.cs" />
@@ -101,6 +102,7 @@
         <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Enslave.cs" />
         <Compile Include="Harmony Patch\Job_Patch\Patch_Warden_Recruit.cs" />
         <Compile Include="Harmony Patch\Patch_Pawn_TickRare.cs" />
+        <Compile Include="Harmony Patch\Pawn_Kill_EconomicCleanup.cs" />
         <Compile Include="Main.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="SessionTracker\BillWorkSessionTracker.cs" />
