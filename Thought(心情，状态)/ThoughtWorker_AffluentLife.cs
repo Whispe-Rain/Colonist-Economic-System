@@ -11,11 +11,11 @@ namespace EconomicSystem
         
         
         // 定义相对财富的百分比系数（作为平衡性调整的中心点）
-        // 阈值 1 (平衡): 殖民地白银的 1%
+        // 阈值 1 (平衡): 殖民地白银的 5%
         private const float Factor_Stable = 0.05f; 
-        // 阈值 2 (富足): 殖民地白银的 3%
+        // 阈值 2 (富足): 殖民地白银的 10%
         private const float Factor_Affluent = 0.1f; 
-        // 阈值 3 (自由): 殖民地白银的 5%
+        // 阈值 3 (自由): 殖民地白银的 20%
         private const float Factor_Wealthy = 0.2f; 
         
         

@@ -82,7 +82,7 @@ namespace EconomicSystem
                 return;
 
             float rawWage = data.CalculatePendingWage();
-            int wageToPay = Mathf.FloorToInt(rawWage*CES_EconomyUtility.GetCorrection(map));
+            int wageToPay = Mathf.FloorToInt(rawWage);
 
             if (wageToPay <= 0)
                 return;

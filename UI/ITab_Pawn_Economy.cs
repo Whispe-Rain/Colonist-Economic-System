@@ -119,7 +119,7 @@ namespace EconomicSystem
 
             float Correction = CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
-                $"工资系数:{Correction}");
+                $"工资系数:{Correction:F2}");
             curY += lineHeight;
             
             float totalWage = data.CalculatePendingWage();

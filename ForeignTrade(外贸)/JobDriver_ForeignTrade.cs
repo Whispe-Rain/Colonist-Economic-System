@@ -119,7 +119,7 @@ namespace EconomicSystem
                 // 如果没有数据或无法找到待售物品，则失败
                 if (data == null || ItemDefName.NullOrEmpty())
                 {
-                    Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
+                   // Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
                     this.EndJobWith(JobCondition.Errored);
                     return;
                 }
@@ -141,8 +141,8 @@ namespace EconomicSystem
 
             if (itemData == null)
             {
-                Log.Warning(
-                    $"[CES] {pawn.NameShortColored} failed trade: Item '{defName}' not found in private inventory.");
+                //Log.Warning(
+                    //$"[CES] {pawn.NameShortColored} failed trade: Item '{defName}' not found in private inventory.");
                 // 如果物品找不到了，直接返回成功，避免无限 Job 失败
                 return;
             }
@@ -153,7 +153,7 @@ namespace EconomicSystem
             // 如果物品无法被重新创建（例如 Mod 卸载），则中止
             if (recreatedThing == null)
             {
-                Log.Error($"[CES] Failed to recreate item '{defName}' for trade settlement. Aborting.");
+                //Log.Error($"[CES] Failed to recreate item '{defName}' for trade settlement. Aborting.");
                 data.privateOwnedAssets.Remove(itemData); // 移除损坏的数据
                 return;
             }
@@ -202,8 +202,8 @@ namespace EconomicSystem
             // D. 反馈 Mote (显示总收入)
             MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Sold: +{netIncome}", Color.green, 3f);
 
-            Log.Message(
-                $"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
+            //Log.Message(
+                //$"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
 
             // 销毁临时 Thing (必须在所有计算完成后进行)
             recreatedThing.Destroy();

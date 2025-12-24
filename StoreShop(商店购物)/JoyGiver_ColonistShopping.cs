@@ -23,7 +23,7 @@ namespace EconomicSystem
             // 检查虚拟余额是否足以进行任何购物
             if (econ == null || econ.virtualWallet < 50f) // 假设最低消费门槛为 50 银
             {
-                Log.Message($"[CES_DEBUG] {pawn.NameShortColored} Denied Job: Insufficient Wallet ({econ?.virtualWallet:F0} < 15).");
+                //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} Denied Job: Insufficient Wallet ({econ?.virtualWallet:F0} < 15).");
                 return 0f;
             }
 
@@ -31,7 +31,7 @@ namespace EconomicSystem
             List<Thing> availableItems = ShoppingUtility.FindBuyableItemsInStockpiles(pawn);
             if (!availableItems.Any())
             {
-                Log.Message($"[CES_DEBUG] {pawn.NameShortColored} Denied Job: No buyable items found in stockpiles.");
+                //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} Denied Job: No buyable items found in stockpiles.");
                 return 0f;
             }
 
@@ -50,7 +50,7 @@ namespace EconomicSystem
             // 最终概率
             float finalChance = baseShoppingChance * walletFactor;
 
-            Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: Base={baseShoppingChance:P2}, WalletFactor={walletFactor:F2}. Final Chance={finalChance:P2}.");
+            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: Base={baseShoppingChance:P2}, WalletFactor={walletFactor:F2}. Final Chance={finalChance:P2}.");
     
             // 确保概率不超过 1.0
             return Mathf.Clamp01(finalChance); 
@@ -63,11 +63,11 @@ namespace EconomicSystem
             List<Thing> availableItems = ShoppingUtility.FindBuyableItemsInStockpiles(pawn);
             if (!availableItems.Any())
             {
-                Log.Message($"[CES_DEBUG] Job denied: Re-check failed. No items available.");
+                //Log.Message($"[CES_DEBUG] Job denied: Re-check failed. No items available.");
                 return null;
             }
             // --- 日志 1: 尝试触发 Job ---
-            Log.Message($"[CES_DEBUG] {pawn.NameShortColored} is considering shopping...");
+            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} is considering shopping...");
 
             // 迭代直到找到一个可以预定且能购买的物品
             foreach (Thing targetItem in availableItems)
@@ -86,13 +86,13 @@ namespace EconomicSystem
                 if (pawn.Reserve(targetItem, newJob, 1, -1)) 
                 {
                     // 预定成功！现在可以返回 Job
-                    Log.Message($"[CES_DEBUG] Job accepted: {pawn.NameShortColored} successfully reserved {targetItem.LabelCap} with Job {newJob.def.defName}.");
+                    //Log.Message($"[CES_DEBUG] Job accepted: {pawn.NameShortColored} successfully reserved {targetItem.LabelCap} with Job {newJob.def.defName}.");
                     return newJob;
                 }
             }
 
             // 如果遍历完所有物品都无法预定（都被占用了），则返回 null
-            Log.Message($"[CES_DEBUG] Job denied: All available items were reserved by others.");
+            //Log.Message($"[CES_DEBUG] Job denied: All available items were reserved by others.");
             return null;
         }
     }

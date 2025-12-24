@@ -23,7 +23,7 @@ namespace EconomicSystem
             var econ = pawn.GetEconomyData();
             if (econ == null)
             {
-                Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
+                //Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
                 return false;
             }
             // 检查预定是否仍然有效（主要是防止预定物品被销毁）
@@ -31,8 +31,8 @@ namespace EconomicSystem
 
             if (ReservationUtility.HasReserved(this.pawn, this.TargetItem))
             {
-                Log.Message(
-                    $"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reservation for {TargetItem.LabelCap} confirmed.");
+                //Log.Message(
+                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reservation for {TargetItem.LabelCap} confirmed.");
                 return true; // 预定已存在，Job可以开始
             }
 
@@ -41,12 +41,12 @@ namespace EconomicSystem
 
             if (!reserved)
             {
-                Log.Message($"[CES_DEBUG] JobDriver denied: Could not reserve {TargetItem.LabelCap} as a fallback.");
+                //Log.Message($"[CES_DEBUG] JobDriver denied: Could not reserve {TargetItem.LabelCap} as a fallback.");
             }
             else
             {
-                Log.Message(
-                    $"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reserved {TargetItem.LabelCap} via fallback. Wallet: {econ.virtualWallet:F0}.");
+                //Log.Message(
+                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reserved {TargetItem.LabelCap} via fallback. Wallet: {econ.virtualWallet:F0}.");
             }
 
             return reserved;
@@ -117,8 +117,8 @@ namespace EconomicSystem
                     job.AddQueuedTarget(TargetIndex.B, target); // 使用 AddQueuedTarget 逐个添加
                 }
 
-                Log.Message(
-                    $"[CES_DEBUG] Browse Loop initialized: Found {browseTargets.Count} nearby items for browsing.");
+                //Log.Message(
+                    //$"[CES_DEBUG] Browse Loop initialized: Found {browseTargets.Count} nearby items for browsing.");
             });
 
             // --- 2. 循环标签 ---
@@ -159,8 +159,8 @@ namespace EconomicSystem
             {
                 // 可以在这里增加一个额外的低概率购买当前浏览商品的逻辑
                 // 但为了简单，我们先保持购买 TargetA 的逻辑不变，只是用浏览来增加 Joy。
-                Log.Message(
-                    $"[CES_DEBUG] Browsing complete at {TargetB.Thing?.LabelCap ?? "unknown item"}. Continuing loop.");
+                //Log.Message(
+                    //$"[CES_DEBUG] Browsing complete at {TargetB.Thing?.LabelCap ?? "unknown item"}. Continuing loop.");
             });
             yield return browse;
 
@@ -179,13 +179,13 @@ namespace EconomicSystem
             {
                 if (finalTarget == null || !ShouldBuyItem(pawn, finalTarget))
                 {
-                    Log.Message(
-                        $"[CES_DEBUG] Final Decision Fail: Pawn skipped buying {finalTarget.LabelCap}. Ending Job.");
+                    //Log.Message(
+                        //$"[CES_DEBUG] Final Decision Fail: Pawn skipped buying {finalTarget.LabelCap}. Ending Job.");
                     this.EndJobWith(JobCondition.Succeeded);
                 }
                 else
                 {
-                    Log.Message($"[CES_DEBUG] Final Decision Success: Proceeding to pay.");
+                    //Log.Message($"[CES_DEBUG] Final Decision Success: Proceeding to pay.");
                 }
             });
 
@@ -214,7 +214,7 @@ namespace EconomicSystem
                 // ⭐ 记得在这里加上 InHorDistOf 检查，防止征召导致的提前支付
                 if (!pawn.Position.InHorDistOf(TargetItem.Position, 2f))
                 {
-                    Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn is too far. Re-queuing job.");
+                    //Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn is too far. Re-queuing job.");
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
@@ -223,7 +223,7 @@ namespace EconomicSystem
 
                 if (econ == null)
                 {
-                    Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn has no Economy Data.");
+                    //Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn has no Economy Data.");
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
@@ -232,21 +232,21 @@ namespace EconomicSystem
                 int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue * TargetItem.stackCount);
                 float preWallet = econ.virtualWallet;
 
-                Log.Message(
-                    $"[CES_DEBUG] Pay Check: {pawn.NameShortColored} is paying {totalPrice}. Current Wallet: {preWallet:F0}.");
+                //Log.Message(
+                    //$"[CES_DEBUG] Pay Check: {pawn.NameShortColored} is paying {totalPrice}. Current Wallet: {preWallet:F0}.");
 
                 if (econ.virtualWallet < totalPrice)
                 {
-                    Log.Error(
-                        $"[CES_DEBUG] Pay FAIL: Insufficient funds. Need {totalPrice}, Have {preWallet}. Job Incompletable.");
+                    //Log.Error(
+                        //$"[CES_DEBUG] Pay FAIL: Insufficient funds. Need {totalPrice}, Have {preWallet}. Job Incompletable.");
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
                 if (!econ.SubtractMoney(totalPrice))
                 {
-                    Log.Error(
-                        $"[CES_DEBUG] Pay FAIL: SubtractMoney returned false for {pawn.NameShortColored}. Job Incompletable.");
+                    //Log.Error(
+                        //$"[CES_DEBUG] Pay FAIL: SubtractMoney returned false for {pawn.NameShortColored}. Job Incompletable.");
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
@@ -259,8 +259,8 @@ namespace EconomicSystem
                 Messages.Message(
                     "ColonistBoughtItem".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);
-                Log.Message(
-                    $"[CES_DEBUG] Pay SUCCESS: {pawn.NameShortColored} paid {totalPrice}. New Wallet: {econ.virtualWallet:F0}.");
+                //Log.Message(
+                    //$"[CES_DEBUG] Pay SUCCESS: {pawn.NameShortColored} paid {totalPrice}. New Wallet: {econ.virtualWallet:F0}.");
             };
 
             toil.defaultCompleteMode = ToilCompleteMode.Instant;
@@ -294,8 +294,8 @@ namespace EconomicSystem
                     pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize);
 
                     // 日志 9: 拿取成功 (虚拟化)
-                    Log.Message(
-                        $"[CES_DEBUG] Take Item SUCCESS: {pawn.NameShortColored} successfully virtualized {itemToVirtualize.LabelCap} as private asset.");
+                    //Log.Message(
+                        //$"[CES_DEBUG] Take Item SUCCESS: {pawn.NameShortColored} successfully virtualized {itemToVirtualize.LabelCap} as private asset.");
 
                     pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"购买{itemToVirtualize.LabelCap.Colorize(Color.cyan)}成功",Color.green));
                     // ⭐ 关键修改：直接在这里结束 Job，不进入下一个 Toil
@@ -303,7 +303,7 @@ namespace EconomicSystem
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"[CES_DEBUG] Toil_TakeItem failed for {pawn.NameShortColored}: {e.Message}");
+                    //Log.Error($"[CES_DEBUG] Toil_TakeItem failed for {pawn.NameShortColored}: {e.Message}");
                     this.EndJobWith(JobCondition.Errored);
                 }
             };
@@ -337,8 +337,8 @@ namespace EconomicSystem
 
             bool decision = Rand.Value < baseChance * moodFactor;
 
-            Log.Message(
-                $"[CES_DEBUG] Buy Decision Calc: Base={baseChance:P0}, MoodFactor={moodFactor:F2}, FinalChance={baseChance * moodFactor:P2}. Result: {decision}.");
+            //Log.Message(
+                //$"[CES_DEBUG] Buy Decision Calc: Base={baseChance:P0}, MoodFactor={moodFactor:F2}, FinalChance={baseChance * moodFactor:P2}. Result: {decision}.");
 
             return decision;
         }

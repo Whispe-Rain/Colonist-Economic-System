@@ -46,7 +46,7 @@ namespace EconomicSystem
             // 最终概率
             float finalChance = baseShoppingChance * walletFactor;
 
-            Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: 基础概率={baseShoppingChance:P2}, 财富因素={walletFactor:F2}. 最终出售概率={finalChance:P2}.");
+            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: 基础概率={baseShoppingChance:P2}, 财富因素={walletFactor:F2}. 最终出售概率={finalChance:P2}.");
     
             // 确保概率不超过 1.0
             return Mathf.Clamp01(finalChance); 
@@ -68,7 +68,7 @@ namespace EconomicSystem
             Thing Goods = GoodsData.RecreateThing();
             
             // --- 日志 1: 尝试触发 Job ---
-            Log.Message($"[CES_DEBUG] {pawn.NameShortColored} 正在尝试进行交易...");
+            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} 正在尝试进行交易...");
             
             //2.得到全部客户
             List<Pawn> customers=new List<Pawn>();
@@ -99,7 +99,7 @@ namespace EconomicSystem
                 return null;
                    
             }
-            Log.Message("潜在客户数量："+customers);
+            //Log.Message("潜在客户数量："+customers);
             // 3.随机选择一个初始目标 (作为 Job 的 TargetA)
             Pawn initTarget = customers.RandomElement();
             

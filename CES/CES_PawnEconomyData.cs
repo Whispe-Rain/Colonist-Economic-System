@@ -13,7 +13,7 @@ namespace EconomicSystem
         /// <summary>
         /// 殖民者的钱包余额
         /// </summary>
-        public float virtualWallet;
+        public float virtualWallet=200f;
 
         /// <summary>
         /// 尚未支付的工资（拖欠）
@@ -186,11 +186,11 @@ namespace EconomicSystem
 
             //建造价值
             if (workType == WorkTypeDefOf.Construction)
-                return 1.0f;
+                return 0.5f;
 
             //采矿价值
             if (workType == WorkTypeDefOf.Mining)
-                return 1.0f;
+                return 0.5f;
 
             //清洁价值
             if (workType == WorkTypeDefOf.Cleaning)
@@ -208,10 +208,10 @@ namespace EconomicSystem
                 return 1.7f;
             //制作/烹饪价值
             if (workType == WorkTypeDefOf.Crafting)
-                return 0.8f;
+                return 0.7f;
             //锻造价值
             if (workType == WorkTypeDefOf.Smithing)
-                return 1.2f;
+                return 1f;
             //割除价值
             if (workType == WorkTypeDefOf.PlantCutting)
                 return 0.7f;

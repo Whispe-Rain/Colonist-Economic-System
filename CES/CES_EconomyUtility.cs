@@ -89,7 +89,7 @@ namespace EconomicSystem
                 map = Find.AnyPlayerHomeMap;
             }
             
-            for (int i = 0; i < (int)map.wealthWatcher.WealthTotal/3000; i++)
+            for (int i = 0; i < (int)map.wealthWatcher.WealthItems/3000; i++)
             {
                 totalCorrection+=0.05f;
             }

@@ -25,7 +25,7 @@ namespace EconomicSystem
             var econ = pawn.GetEconomyData();
             if (econ == null)
             {
-                Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
+                //Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
                 return false;
             }
 
@@ -34,14 +34,14 @@ namespace EconomicSystem
             bool reserved = this.pawn.Reserve(targetPawn, this.job, 1, -1, null, errorOnFailed);
             if (reserved)
             {
-                Log.Message(
-                    $"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} 成功预定 {TargetPawn.NameShortColored}。");
+                //Log.Message(
+                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} 成功预定 {TargetPawn.NameShortColored}。");
             }
             else
             {
                 // 如果预定失败，说明目标在 JobGiver 检查后到 JobDriver 启动前被别人抢走了
-                Log.Warning(
-                    $"[CES_DEBUG] JobDriver denied: {pawn.NameShortColored} 无法预定 {TargetPawn.NameShortColored}。");
+                //Log.Warning(
+                    //$"[CES_DEBUG] JobDriver denied: {pawn.NameShortColored} 无法预定 {TargetPawn.NameShortColored}。");
             }
 
             return reserved;
@@ -135,7 +135,7 @@ namespace EconomicSystem
                 // 如果自身和买方任意一个经济数据不存在，直接结束任务
                 if (data == null || TargetPawn.GetEconomyData() == null)
                 {
-                    Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
+                    //Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
                     this.EndJobWith(JobCondition.Errored);
                     return;
                 }
@@ -164,8 +164,8 @@ namespace EconomicSystem
 
             if (itemData == null)
             {
-                Log.Warning(
-                    $"[CES] {pawn.NameShortColored} failed trade: 物品 '{defName}' 没有在私人背包中找到.");
+                //Log.Warning(
+                    //$"[CES] {pawn.NameShortColored} failed trade: 物品 '{defName}' 没有在私人背包中找到.");
                 // 如果物品找不到了，直接返回成功，避免无限 Job 失败
                 return;
             }
@@ -176,7 +176,7 @@ namespace EconomicSystem
             // 如果物品无法被重新创建（例如 Mod 卸载），则中止
             if (recreatedThing == null)
             {
-                Log.Error($"[CES] 用于交易的物品重建‘{defName}’失败");
+                //Log.Error($"[CES] 用于交易的物品重建‘{defName}’失败");
                 data.privateOwnedAssets.Remove(itemData); // 移除损坏的数据
                 return;
             }
@@ -235,8 +235,8 @@ namespace EconomicSystem
             // D. 反馈 Mote (显示总收入)
             MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Sold: +{netIncome}", Color.green, 3f);
 
-            Log.Message(
-                $"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
+            //Log.Message(
+                //$"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
         }
         
         private void OnJobFinished(JobCondition condition)
