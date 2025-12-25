@@ -46,11 +46,11 @@ namespace EconomicSystem
             }
             data.workValueByType[workType] += workDone;
             
-            Log.Message(
+            /*Log.Message(
                 $"[CES] 工作完成 | Pawn={pawn.NameShortColored} | " +
                 $"工作类型={workType.defName} | " +
                 $"工作量={data.workValueByType[workType]}"
-            );
+            );*/
         }
     }
 

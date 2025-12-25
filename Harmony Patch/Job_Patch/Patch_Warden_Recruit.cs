@@ -66,10 +66,10 @@ namespace EconomicSystem
             // 抵抗值减少量作为工作价值
             data.AddWork(WorkTypeDefOf.Warden, resistanceReduced*5); 
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES] 招募-降抵抗 | {warden.NameShortColored} | " +
                 $"目标={prisoner.LabelShortCap} | 工作量={resistanceReduced:F2}"
-            );
+            );*/
         }
     }
 }

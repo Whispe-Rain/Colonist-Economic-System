@@ -16,6 +16,10 @@ namespace EconomicSystem
         public string stuffDefName; // 材质 Def (例如: Plasteel)
         // 可以根据需要添加更多属性（例如，制造者、名称等）
 
+
+        public int buyPrice;//买入价
+        public int sellPrice;//卖出价
+        
         // 默认构造函数 (用于 Scribe)
         public PrivateItemData() { }
         
@@ -58,6 +62,8 @@ namespace EconomicSystem
             }
             
             Scribe_Values.Look(ref stuffDefName, "stuffDefName");
+            Scribe_Values.Look(ref buyPrice, "buyPrice");
+            Scribe_Values.Look(ref buyPrice, "sellPrice");
         }
 
         /// <summary>
@@ -93,7 +99,7 @@ namespace EconomicSystem
             // 注意：ThingMaker.MakeThing 接受 null 材质，所以即使 stuffDef 为 null 也是安全的
             Thing newThing = ThingMaker.MakeThing(thingDef, stuffDef);
             newThing.stackCount = stackCount;
-
+            
             // 2. 恢复品质
             if (quality.HasValue && newThing.TryGetComp<CompQuality>() is CompQuality compQ)
             {
@@ -107,7 +113,7 @@ namespace EconomicSystem
             }
 
             // 4. TODO: 恢复风格、名称等
-
+            
             return newThing;
         }
     }

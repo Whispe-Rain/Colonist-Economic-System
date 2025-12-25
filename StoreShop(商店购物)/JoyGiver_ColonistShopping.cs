@@ -58,6 +58,12 @@ namespace EconomicSystem
 
         public override Job TryGiveJob(Pawn pawn)
         {
+            
+            // 检查通用交易冷却（例如，刚才拒绝了某个商人的交易）
+            if (pawn.GetEconomyData().IsOnCooldown("ShopFail"))
+            {
+                return null;
+            }
     
             // GetChance 已经确保了有物品和余额
             List<Thing> availableItems = ShoppingUtility.FindBuyableItemsInStockpiles(pawn);

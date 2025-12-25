@@ -13,10 +13,11 @@ namespace EconomicSystem
     public class JobDriver_GoShopping : JobDriver
     {
         // Toil 的 Job 持续时间（Ticks）
-        private const int TicksToBrowse = 900;
+        private const int TicksToBrowse = 600;
         private const int TicksToPay = 90;
 
         private Thing TargetItem => TargetA.Thing;
+        
         
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
@@ -227,8 +228,8 @@ namespace EconomicSystem
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
-
-                // ... (原 Toil_VirtualPay 的所有支付逻辑) ...
+                
+                //得到当前售价
                 int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue * TargetItem.stackCount);
                 float preWallet = econ.virtualWallet;
 
@@ -255,7 +256,8 @@ namespace EconomicSystem
                 Thing silver = ThingMaker.MakeThing(ThingDefOf.Silver);
                 silver.stackCount = totalPrice;
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
-
+                
+                
                 Messages.Message(
                     "ColonistBoughtItem".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);

@@ -63,6 +63,12 @@ namespace EconomicSystem
                 return null;
             }
             
+            // 检查通用交易冷却（例如，刚才拒绝了某个商人的交易）
+            if (data.IsOnCooldown("TransactionFail"))
+            {
+                return null;
+            }
+            
             //1.确认代售商品
             PrivateItemData GoodsData= data.privateOwnedAssets[Random.Range(0, data.privateOwnedAssets.Count)];
             Thing Goods = GoodsData.RecreateThing();

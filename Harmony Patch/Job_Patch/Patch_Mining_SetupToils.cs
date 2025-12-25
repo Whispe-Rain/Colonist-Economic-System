@@ -28,9 +28,9 @@ namespace EconomicSystem
 
             MiningWorkSessionTracker.Begin(pawn, mineable);
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES][Mining] Begin {pawn.LabelShort} HP={mineable.HitPoints}"
-            );
+            );*/
         }
     }
 

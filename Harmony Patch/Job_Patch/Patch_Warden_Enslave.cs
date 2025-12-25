@@ -66,10 +66,10 @@ namespace EconomicSystem
             // 意志力减少量作为工作价值
             data.AddWork(WorkTypeDefOf.Warden, willReduced*5); 
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES] 奴役-降意志 | {warden.NameShortColored} | " +
                 $"目标={prisoner.LabelShortCap} | 工作量={willReduced:F2}"
-            );
+            );*/
         }
     }
 }

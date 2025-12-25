@@ -19,9 +19,9 @@ namespace EconomicSystem
 
             ResearchWorkSessionTracker.Begin(pawn);
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES][Research] Begin {pawn.LabelShort}"
-            );
+            );*/
         }
     }
 

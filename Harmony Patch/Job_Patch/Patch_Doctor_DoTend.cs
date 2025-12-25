@@ -34,9 +34,9 @@ namespace EconomicSystem
             // 使用计算出的工作价值
             data.AddWork(WorkTypeDefOf.Doctor, workValue);
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES] 医疗工作完成 | 医生={doctor.NameShortColored} | 工作价值={workValue:F2}"
-            );
+            );*/
         }
     }
 }

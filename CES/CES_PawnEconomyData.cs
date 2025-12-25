@@ -31,8 +31,14 @@ namespace EconomicSystem
         /// 殖民者的私人物品列表
         public List<PrivateItemData> privateOwnedAssets = new List<PrivateItemData>();
 
+        public int Profit;
         //殖民者的经济信息记录
         public List<EconomicLogEntry> economicHistory = new List<EconomicLogEntry>();
+        
+        //工作冷却，防止卡死
+        // Key: 冷却行为的类型 (e.g., "TradeFail", "StealFail")
+        // Value: 冷却结束的 Tick 时间
+        public Dictionary<string, int> coolDowns = new Dictionary<string, int>();
         
 
         // 利息
@@ -70,14 +76,30 @@ namespace EconomicSystem
             }
 
             // 【关键修复】：确保列表的 Scribe 逻辑
-            Scribe_Collections.Look(ref this.economicHistory, "economicHistory", LookMode.Deep);
+            Scribe_Collections.Look(
+                ref this.economicHistory, 
+                "economicHistory", 
+                LookMode.Deep);
 
             // 【安全检查】：如果加载失败，列表可能是 null，我们必须初始化它
             if (Scribe.mode == LoadSaveMode.LoadingVars && this.economicHistory == null)
             {
                 this.economicHistory = new List<EconomicLogEntry>();
             }
-
+            
+            Scribe_Collections.Look(
+                ref this.coolDowns, 
+                "coolDowns", 
+                LookMode.Value,
+                LookMode.Value);
+            
+            // 【安全检查】：如果加载失败，列表可能是 null，我们必须初始化它
+            if (Scribe.mode == LoadSaveMode.LoadingVars && this.coolDowns == null)
+            {
+                this.coolDowns = new Dictionary<string, int>();
+            }
+            
+            Scribe_Values.Look(ref Profit, "Profit", 0);
         }
 
         #endregion
@@ -182,7 +204,7 @@ namespace EconomicSystem
             // 示例规则（你可以随时改）
             //研究价值
             if (workType == WorkTypeDefOf.Research)
-                return 1.5f;
+                return 1.2f;
 
             //建造价值
             if (workType == WorkTypeDefOf.Construction)
@@ -205,7 +227,7 @@ namespace EconomicSystem
                 return 1f;
             //医疗价值
             if (workType == WorkTypeDefOf.Doctor)
-                return 1.7f;
+                return 2f;
             //制作/烹饪价值
             if (workType == WorkTypeDefOf.Crafting)
                 return 0.7f;
@@ -271,7 +293,8 @@ namespace EconomicSystem
 
             // 1. 创建资产数据
             PrivateItemData asset = new PrivateItemData(item);
-
+           
+            
             // 2. 添加到列表
             privateOwnedAssets.Add(asset);
 
@@ -291,14 +314,20 @@ namespace EconomicSystem
         }
 
         // 示例：从私有资产中移除一个项目 (用于出售或使用)
-        public bool RemoveAsset(PrivateItemData asset)
+        public bool RemoveAsset(PrivateItemData asset,int sellPrice)
         {
+            //记录售出价
+            asset.sellPrice=sellPrice;
+            Log.Message(asset.Name + "售出价:" + sellPrice);
             return privateOwnedAssets.Remove(asset);
         }
 
-        public bool AddAsset(PrivateItemData asset)
+        public bool AddAsset(PrivateItemData asset,int buyPrice)
         {
             int i = privateOwnedAssets.Count;
+            //记录买入价格
+            asset.buyPrice=buyPrice;
+            Log.Message(asset.Name + "购买价:" + buyPrice);
             this.privateOwnedAssets.Add(asset);
             if (privateOwnedAssets.Count > i)
             {
@@ -308,10 +337,16 @@ namespace EconomicSystem
             return false;
         }
 
+        //对
+        public int GetProfit(int sellPrice, int buyPrice)
+        {
+            return sellPrice-buyPrice;
+        }
+
         #endregion
 
         /// <summary>
-        /// 检查并应用每日安全保管费回馈，将虚拟资金注入钱包。
+        /// 检查并应用每日利息，将虚拟资金注入钱包。
         /// </summary>
         public void TryApplyDailyInterest()
         {
@@ -341,5 +376,22 @@ namespace EconomicSystem
             lastInterestDay = currentDay;
 
         }
+
+        #region 工作冷却检查
+
+        //设置冷却期
+        public void SetCooldown(string key, int durationTicks)
+        {
+            coolDowns[key] = Find.TickManager.TicksGame + durationTicks;
+        }
+
+        //判断工作是否在冷却期
+        public bool IsOnCooldown(string key)
+        {
+            return coolDowns.ContainsKey(key) && coolDowns[key] > Find.TickManager.TicksGame;
+        }
+
+        #endregion
+        
     }
 }

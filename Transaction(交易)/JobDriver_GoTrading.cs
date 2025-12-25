@@ -52,10 +52,11 @@ namespace EconomicSystem
             //##核心代码,适合用来处理任何Job中断后的处理（优先级很高）##   
             this.AddFinishAction(OnJobFinished);
             
-            // 失败条件: 如果商队Pawn死亡或离开地图
+            // 失败条件: 如果Pawn死亡或离开地图,或者Pawn正在睡觉
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOnDowned(TargetIndex.A);
             this.FailOn(() => this.pawn.Drafted);
+            this.FailOn(() => TargetA.Thing is Pawn p && !p.Awake());
 
             // --- Toil 1: 前往目标客户（Goto） ---
             // 路径搜索模式为 Touch，意味着Pawn需要走到紧贴目标Pawn的位置
@@ -116,7 +117,7 @@ namespace EconomicSystem
 
                 // **追逐逻辑：如果Pawn走远，则跳回 Toil 1 (goToTrader)**
                 // 如果Pawn超过 4 格，则重新执行前往 Toil
-                if (!pawn.Position.InHorDistOf(TargetPawn.Position, 4f))
+                if (!pawn.Position.InHorDistOf(TargetPawn.Position, 5f))
                 {
                     // 重置计时器，并跳回 Toil 1 (前往)
                     pawn.jobs.curDriver.JumpToToil(goToTrader);
@@ -189,10 +190,18 @@ namespace EconomicSystem
                 return ;
             }
 
+            if (itemData.buyPrice==0)
+            {
+                itemData.buyPrice = (int)recreatedThing.MarketValue* itemData.stackCount;
+            }
+
             // 3. 计算价格
-            float baseValue = recreatedThing.MarketValue * itemData.stackCount;
-            // 价格浮动：模拟砍价和加价 (85% 到 115%)
-            float priceFactor = Rand.Range(0.75f, 1.15f);
+            float baseValue = itemData.buyPrice ;
+            // 价格浮动：模拟砍价和加价 (75% 到 115%)+社交*0.03+智识*0.01
+            //0.1f这10%是商业税，相当于先加价10%，然后卖家全额负担商品税10%
+            float priceFactor = Rand.Range(0.75f, 1.25f)+0.1f+
+                                pawn.skills.GetSkill(SkillDefOf.Social).Level*0.03f+
+                                pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
             int salePrice = Mathf.CeilToInt(baseValue * priceFactor);
 
             // 4. 计算税收 (10% 商业税)
@@ -202,16 +211,35 @@ namespace EconomicSystem
             
             // 5. 执行结算操作
             // A. 移除虚拟物品
-            data.RemoveAsset(itemData);
+            data.RemoveAsset(itemData,netIncome);
 
-            //买家添加物品并付钱给买家
-            if (targetPawn.GetEconomyData().AddAsset(itemData))//相当于货到付款
+            Log.Message("sellPrice:"+itemData.sellPrice);
+            Log.Message("buyPrice:"+itemData.buyPrice);
+            //计算利润并记录
+            int profit= data.GetProfit(itemData.sellPrice,itemData.buyPrice);
+            data.Profit+=profit;
+            if (profit>0)
             {
+                //盈利售卖日志
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{targetPawn.NameShortColored}\n" +
+                    $",净利润+{profit.ToString().Colorize(Color.green)}"));
+            }
+            else
+            {
+                //亏损售卖日志
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{targetPawn.NameShortColored}\n" +
+                    $",净利润{profit.ToString().Colorize(Color.red)}"));
+            }
+            
+            //买家添加物品并付钱给卖家
+            if (targetPawn.GetEconomyData().AddAsset(itemData,salePrice))//相当于货到付款
+            {
+               
                 //生成购买日志
-                targetPawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"从{pawn.NameShortColored}手中购买了{itemData.Name.Colorize(Color.yellow)}"));
-                
-                //生成售卖日志
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"将{itemData.Name.Colorize(Color.yellow)}卖给了{targetPawn.NameShortColored}"));
+                targetPawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                    $"从{pawn.NameShortColored}手中花费了{salePrice}白银购买了{itemData.Name.Colorize(Color.yellow)}"));
                 
                 // B. 增加虚拟货币
                 targetPawn.GetEconomyData().virtualWallet -= salePrice;

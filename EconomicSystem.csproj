@@ -87,6 +87,7 @@
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistHasToPay.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_PayForMeal_VirtualWallet.cs" />
         <Compile Include="Harmony Patch\HarmonyInit.cs" />
+        <Compile Include="Harmony Patch\JobDriver_EndJobWith_Cooldown.cs" />
         <Compile Include="Harmony Patch\Job_Patch\Patch_Construction_Cleanup.cs" />
         <Compile Include="Harmony Patch\Job_Patch\Patch_Construction_SetupToils.cs" />
         <Compile Include="Harmony Patch\Job_Patch\Patch_Default_Cleanup.cs" />

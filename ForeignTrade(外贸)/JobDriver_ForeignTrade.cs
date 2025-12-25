@@ -32,9 +32,10 @@ namespace EconomicSystem
         {
             this.AddFinishAction(OnJobFinished);
             
-            // 失败条件: 如果商队Pawn死亡或离开地图
+            // 失败条件: 如果商队Pawn死亡或离开地图或者正在睡觉
             this.FailOnDespawnedOrNull(TargetTrader);
             this.FailOnDowned(TargetTrader);
+            this.FailOn(() => TargetA.Thing is Pawn p && !p.Awake());
 
             // --- Toil 1: 前往商队Pawn（Goto） ---
 
@@ -98,7 +99,7 @@ namespace EconomicSystem
             interaction.tickAction = delegate
             {
                 // **追逐逻辑：如果商队Pawn走远，则跳回 Toil 1 (goToTrader)**
-                // 如果Pawn离目标超过 3 格，则重新执行前往 Toil
+                // 如果Pawn离目标超过 4 格，则重新执行前往 Toil
                 if (!pawn.Position.InHorDistOf(TraderPawn.Position, 4f))
                 {
                     // 重置计时器，并跳回 Toil 1 (前往)
@@ -169,8 +170,10 @@ namespace EconomicSystem
 
             // 3. 计算价格
             float baseValue = recreatedThing.MarketValue * itemData.stackCount;
-            // 价格浮动：模拟砍价和加价 (85% 到 115%)
-            float priceFactor = Rand.Range(0.75f, 1.15f);
+            // 价格浮动：模拟砍价和加价 (75% 到 115%)+社交*0.02+智识*0.01
+            float priceFactor = Rand.Range(0.75f, 1.15f)+
+                                pawn.skills.GetSkill(SkillDefOf.Social).Level*0.03f+
+                                pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
             int salePrice = Mathf.CeilToInt(baseValue * priceFactor);
 
             // 4. 计算税收 (10% 商业税)
@@ -180,8 +183,26 @@ namespace EconomicSystem
             // 5. 执行结算操作
 
             // A. 殖民者移除虚拟物品,并在商队小人的背包中加入该物品
-            data.privateOwnedAssets.Remove(itemData);
+            data.RemoveAsset(itemData,netIncome);
             TraderPawn.inventory.innerContainer.TryAdd(recreatedThing);
+            
+            //计算利润并记录
+            int profit= data.GetProfit(itemData.buyPrice,itemData.sellPrice);
+            data.Profit+=profit;
+            if (profit>0)
+            {
+                //盈利售卖日志
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                    $",净利润{profit.ToString().Colorize(Color.green)}"));
+            }
+            else
+            {
+                //亏损售卖日志
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                    $",净利润{profit.ToString().Colorize(Color.red)}"));
+            }
 
             // B. 增加虚拟货币
             data.AddMoney(netIncome);

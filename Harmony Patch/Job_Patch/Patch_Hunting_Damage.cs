@@ -53,10 +53,10 @@ namespace EconomicSystem
             // 每次伤害都增加工作价值
             data.AddWork(WorkTypeDefOf.Hunting, damage);
 
-            Log.Message(
+            /*Log.Message(
                 $"[CES] 狩猎 | {hunter.NameShortColored} | " +
                 $"目标={animal.LabelShortCap} | 伤害={damage:F1}"
-            );
+            );*/
         }
     }
 }

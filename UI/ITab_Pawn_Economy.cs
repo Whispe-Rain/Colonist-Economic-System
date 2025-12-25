@@ -42,7 +42,7 @@ namespace EconomicSystem
         public ITab_Pawn_Economy()
         {
             // ⭐ 关键修改：增加宽度和高度以容纳双列
-            size = new Vector2(600f, 400f);
+            size = new Vector2(800f, 400f);
             labelKey = "经济";
         }
 
@@ -102,7 +102,9 @@ namespace EconomicSystem
         private void DrawEconomicPanel(Rect rect, Pawn pawn, CES_PawnEconomyData data)
         {
             float lineHeight = 28f;
+            float lineWidth = 100f;
             float curY = rect.yMin;
+            float curX = rect.xMin;
 
             // ===== 标题 =====
             Widgets.Label(rect.TopPartPixels(lineHeight), "经济");
@@ -110,11 +112,11 @@ namespace EconomicSystem
 
             // ===== 顶部数值 =====
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
-                $"钱包：{data.virtualWallet:F0}");
+                $"钱包:{data.virtualWallet:F0}");
             curY += lineHeight;
 
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
-                $"欠薪：{data.unpaidWage:F0}");
+                $"欠薪:{data.unpaidWage:F0}");
             curY += lineHeight;
 
             float Correction = CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
@@ -124,8 +126,17 @@ namespace EconomicSystem
             
             float totalWage = data.CalculatePendingWage();
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
-                $"待发工资：{totalWage:F0}");
-            curY += lineHeight + 6f;
+                $"工资:{totalWage:F0}");
+            curY += lineHeight + 16f;
+            
+            curX+=lineWidth;
+            float Profit = data.Profit;
+            //如果利润为正，绿色，为负，红色
+            Color color =Profit>0?Color.green:Color.red;
+            Widgets.Label(new Rect(curX, rect.y, rect.width, lineHeight),
+                $"利润:{Profit.ToString().Colorize(color):F0)}");
+            
+           
             
            
 

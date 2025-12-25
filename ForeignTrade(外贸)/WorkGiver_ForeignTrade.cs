@@ -37,6 +37,12 @@ namespace EconomicSystem
         // 核心方法：尝试给 Pawn 分配一个 Job
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
+            // 检查通用交易冷却（例如，刚才拒绝了某个商人的交易）
+            if (pawn.GetEconomyData().IsOnCooldown("ForeignFail"))
+            {
+                return null;
+            }
+            
             // t 就是 PotentialWorkThingsGlobal 返回的 Pawn
             Pawn targetTrader = t as Pawn;
             if (targetTrader == null)

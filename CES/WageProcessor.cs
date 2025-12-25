@@ -91,8 +91,12 @@ namespace EconomicSystem
 
             if (paid)
             {
-                data.AddMoney(wageToPay);
-                data.ClearPendingWork(); // ✅ 只在成功后清
+                //加上待发工资和欠薪(如果有的话)
+                data.AddMoney(wageToPay+(int)data.unpaidWage);
+                data.ClearPendingWork(); // 清除工作列表
+                data.unpaidWage = 0;//结清欠款
+                //清空利润记录
+                data.Profit = 0;
 
                 // 核心代码：添加心情 Buff
                 // 1. 获取 ThoughtDef
