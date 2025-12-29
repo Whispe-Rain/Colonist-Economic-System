@@ -13,8 +13,9 @@ namespace EconomicSystem
     {
         // 交易的最远距离，防止追逐太远
         private const float MaxTradeDistance = 40f;
-        
-        
+        //冷却时间
+        private const int CooldownTicks = 240;
+        private static readonly Dictionary<Pawn, int> lastTryTick = new();
         
         //决定了Pawn执行交易行为的概率
         public override float GetChance(Pawn pawn)
@@ -35,7 +36,7 @@ namespace EconomicSystem
             }
             
             //概率计算
-            float baseShoppingChance = 0.25f; 
+            float baseShoppingChance = 5f; 
             
             //财富值越高越不容易售卖物品，反之越容易出售物品
             float walletScale = Mathf.InverseLerp(3000f, 50f, data.virtualWallet); 
@@ -49,12 +50,22 @@ namespace EconomicSystem
             //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: 基础概率={baseShoppingChance:P2}, 财富因素={walletFactor:F2}. 最终出售概率={finalChance:P2}.");
     
             // 确保概率不超过 1.0
-            return Mathf.Clamp01(finalChance); 
+            return finalChance; 
             
         }
         
         public override Job TryGiveJob(Pawn pawn)
         {
+            //冷却
+            int now = Find.TickManager.TicksGame;
+
+            if (lastTryTick.TryGetValue(pawn, out int last))
+            {
+                if (now - last < CooldownTicks)
+                    return null;
+            }
+            lastTryTick[pawn] = now;
+            
             CES_PawnEconomyData data=pawn.GetEconomyData();
             //得到全部殖民者
             List<Pawn> allCustomer = TransactionUtility.FindAllTheCustomers(pawn);
@@ -63,11 +74,6 @@ namespace EconomicSystem
                 return null;
             }
             
-            // 检查通用交易冷却（例如，刚才拒绝了某个商人的交易）
-            if (data.IsOnCooldown("TransactionFail"))
-            {
-                return null;
-            }
             
             //1.确认代售商品
             PrivateItemData GoodsData= data.privateOwnedAssets[Random.Range(0, data.privateOwnedAssets.Count)];

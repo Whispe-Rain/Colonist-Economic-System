@@ -12,12 +12,12 @@ namespace EconomicSystem
         // TargetIndex.A 始终指向目标Pawn (TargetA)
         private const TargetIndex TargetTrader = TargetIndex.A;
 
-        // 模拟交谈的持续时间（Ticks），例如 600 Ticks 约 10 秒
-        private const int TicksToTrade = 600;
+        // 模拟交谈的持续时间（Ticks），例如 300 Ticks 约 5秒
+        private const int TicksToTrade = 300;
 
         // 用于获取商队 Pawn 的快捷方法
         private Pawn TraderPawn => (Pawn)this.job.GetTarget(TargetTrader).Thing;
-        
+
         // 修正：从 job.dutyTag 中读取物品 DefName
         private string ItemDefName => this.job.dutyTag;
 
@@ -31,7 +31,7 @@ namespace EconomicSystem
         protected override IEnumerable<Toil> MakeNewToils()
         {
             this.AddFinishAction(OnJobFinished);
-            
+
             // 失败条件: 如果商队Pawn死亡或离开地图或者正在睡觉
             this.FailOnDespawnedOrNull(TargetTrader);
             this.FailOnDowned(TargetTrader);
@@ -45,12 +45,10 @@ namespace EconomicSystem
 
             yield return goToTrader;
 
-            
+
             // ⭐ 新增 Toil 1.5：拿起虚拟物品并实例化 (Make Thing and Carry)
             yield return Toils_General.Do(delegate
             {
-                
-                
                 // ⭐ 如果已经有视觉物品，就不要再生成
                 Thing visualThing = job.GetTarget(TargetIndex.B).Thing;
                 if (visualThing != null && pawn.carryTracker?.CarriedThing == visualThing)
@@ -59,37 +57,34 @@ namespace EconomicSystem
                     return;
                 }
 
-                
+
                 // 2. 找到并从 Pawn 的私人资产中移除（防止交易中途卖掉）
                 CES_PawnEconomyData data = this.pawn.GetEconomyData();
                 PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == ItemDefName);
 
                 if (itemData == null)
                 {
-                    this.EndJobWith(JobCondition.Errored);
                     return;
                 }
-                
+
                 // 3. 实例化 Thing (临时创建实体)
                 Thing sellingItem = itemData.RecreateThing();
-                //（关键）设置该物体掉落及销毁
-                sellingItem.def.destroyOnDrop = true;
-                
-                job.SetTarget(TargetIndex.B, sellingItem);
-                
+
                 if (sellingItem == null)
                 {
-                    this.EndJobWith(JobCondition.Errored);
+                    // ★ 错误情况下，应该移除这个坏数据，避免 WorkGiver 循环选取
+                    data.privateOwnedAssets.Remove(itemData);
                     return;
                 }
 
                 // 4. 关键：Pawn 拿起物品
                 this.pawn.carryTracker.TryStartCarry(sellingItem);
-
+                //（关键）设置该物体掉落及销毁
+                sellingItem.def.destroyOnDrop = true;
                 // 5. 将该物品设置为 TargetIndex.B，供后续 Toil 使用
                 this.job.SetTarget(TargetIndex.B, sellingItem);
             });
-            
+
 
             // --- Toil 2: 追逐/互动 Toil（Wait with Jump） ---
             // 使用 Wait 模拟交谈时间，并将 TargetTrader 设置为面向目标
@@ -120,20 +115,15 @@ namespace EconomicSystem
                 // 如果没有数据或无法找到待售物品，则失败
                 if (data == null || ItemDefName.NullOrEmpty())
                 {
-                   // Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
-                    this.EndJobWith(JobCondition.Errored);
                     return;
                 }
 
                 // 尝试执行交易逻辑
                 ExecuteTradeAndSettle(pawn, data, ItemDefName);
-
-                // 无论成功与否，Job 都视为完成
-                this.EndJobWith(JobCondition.Succeeded);
+                
             });
-
         }
-        
+
         // 辅助方法：执行交易和结算
         private void ExecuteTradeAndSettle(Pawn pawn, CES_PawnEconomyData data, string defName)
         {
@@ -143,7 +133,7 @@ namespace EconomicSystem
             if (itemData == null)
             {
                 //Log.Warning(
-                    //$"[CES] {pawn.NameShortColored} failed trade: Item '{defName}' not found in private inventory.");
+                //$"[CES] {pawn.NameShortColored} failed trade: Item '{defName}' not found in private inventory.");
                 // 如果物品找不到了，直接返回成功，避免无限 Job 失败
                 return;
             }
@@ -170,10 +160,10 @@ namespace EconomicSystem
 
             // 3. 计算价格
             float baseValue = recreatedThing.MarketValue * itemData.stackCount;
-            // 价格浮动：模拟砍价和加价 (75% 到 115%)+社交*0.02+智识*0.01
-            float priceFactor = Rand.Range(0.75f, 1.15f)+
-                                pawn.skills.GetSkill(SkillDefOf.Social).Level*0.03f+
-                                pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
+            // 价格浮动：模拟砍价和加价 (65% 到 115%)+社交*0.02+智识*0.01+商品加价0.1
+            float priceFactor = Rand.Range(0.65f, 1.15f) +0.1f+
+                                pawn.skills.GetSkill(SkillDefOf.Social).Level * 0.02f +
+                                pawn.skills.GetSkill(SkillDefOf.Intellectual).Level * 0.01f;
             int salePrice = Mathf.CeilToInt(baseValue * priceFactor);
 
             // 4. 计算税收 (10% 商业税)
@@ -183,53 +173,114 @@ namespace EconomicSystem
             // 5. 执行结算操作
 
             // A. 殖民者移除虚拟物品,并在商队小人的背包中加入该物品
-            data.RemoveAsset(itemData,netIncome);
-            TraderPawn.inventory.innerContainer.TryAdd(recreatedThing);
-            
-            //计算利润并记录
-            int profit= data.GetProfit(itemData.buyPrice,itemData.sellPrice);
-            data.Profit+=profit;
-            if (profit>0)
+            data.RemoveAsset(itemData, netIncome);
+
+
+            //随机判定：以物易物 (Barter) 还是白银交易 (Silver)
+            bool isBarterTrade = Rand.Chance(0.20f); // 20% 概率以物易物
+            if (isBarterTrade)
             {
-                //盈利售卖日志
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
-                    $",净利润{profit.ToString().Colorize(Color.green)}"));
+                // 1. 随机选择一个可注入的物品定义
+                // 我们选择一个最大价值略高于目标价值的物品，防止只选到低价值的。
+                ThingDef defToInject = ForeignTradeUtility.GetRandomInjectableThingDef(salePrice * 2);
+                Thing ToInject = ThingMaker.MakeThing(defToInject);
+                if (defToInject != null)
+                {
+                    //得到该物品的市场价
+                    float itemMarketValue = defToInject.BaseMarketValue;
+
+                    if (itemMarketValue > 0)
+                    {
+                        // 2. 计算可以兑换的数量
+                        // 数量 = floor( 目标价值 / 单个物品市场价值 )
+                        int count = Mathf.FloorToInt(salePrice / itemMarketValue);
+                        if (count > 0)
+                        {
+                            // 3. 计算实际兑换的价值
+                            int actualValue = Mathf.RoundToInt(count * itemMarketValue);
+
+                            // 4. 注入到 Pawn 的私有背包数据中
+                            data.VirtualAndMarkAsset(ToInject,count);
+                            // data.AddAsset(defToInject, count);
+
+                            // 5. 将兑换后的剩余价值（找零）以白银形式注入 (可选，用于精确匹配)
+                            int remainder = salePrice - actualValue;
+                            if (remainder > 0)
+                            {
+                                data.AddMoney(remainder);
+                            }
+
+                            // 6. 反馈 Mote 和日志
+                            string feedbackText = $"Bartered: +{defToInject.label} x{count}";
+                            if (remainder > 0)
+                            {
+                                feedbackText += $" (+{remainder} Silver)";
+                            }
+
+                            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, feedbackText, Color.cyan, 3.5f);
+
+                            pawn.GetEconomyData().economicHistory.Add(
+                                EconomicLogEntry.NewLog(
+                                    $"与{TraderPawn.NameShortColored}以物易物，换取了{defToInject.label.Colorize(Color.cyan)} x{count}，找零{remainder}白银"));
+                        }
+                        else
+                        {
+                            // 找到了物品，但目标价值太低，连一个都换不起。
+                            // 此时默认转为白银交易，或者直接将 netIncome 注入白银。
+                            data.AddMoney(salePrice);
+                            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "BarterFailed_ToSilver".Translate(),
+                                Color.yellow, 3f);
+
+                            pawn.GetEconomyData().economicHistory.Add(
+                                EconomicLogEntry.NewLog($"与{TraderPawn.NameShortColored}以物易物失败，转为白银交易+{salePrice}。"));
+                        }
+                    }
+                }
             }
             else
             {
-                //亏损售卖日志
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
-                    $",净利润{profit.ToString().Colorize(Color.red)}"));
+                //计算利润并记录
+                int profit = data.GetProfit(itemData.sellPrice, itemData.buyPrice);
+                data.Profit += profit;
+                if (profit > 0)
+                {
+                    //盈利售卖日志
+                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                        $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                        $",净利润{profit.ToString().Colorize(Color.green)}"));
+                }
+                else
+                {
+                    //亏损售卖日志
+                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
+                        $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                        $",净利润{profit.ToString().Colorize(Color.red)}"));
+                }
+
+                // B. 增加虚拟货币
+                data.AddMoney(netIncome);
+
+                // C. 生成实体白银税收
+                if (taxAmount > 0)
+                {
+                    Thing silverTax = ThingMaker.MakeThing(ThingDefOf.Silver);
+                    silverTax.stackCount = taxAmount;
+
+                    // 生成在 Pawn 的位置
+                    GenSpawn.Spawn(silverTax, pawn.Position, pawn.Map);
+
+                    // 通知玩家税收已生成 (可选 Mote)
+                    MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Tax: {taxAmount} Silver", Color.white, 2.5f);
+                }
+
+                // D. 反馈 Mote (显示总收入)
+                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Sold: +{netIncome}", Color.green, 3f);
+
+                // 销毁临时 Thing (必须在所有计算完成后进行)
+                recreatedThing.Destroy();
             }
-
-            // B. 增加虚拟货币
-            data.AddMoney(netIncome);
-
-            // C. 生成实体白银税收
-            if (taxAmount > 0)
-            {
-                Thing silverTax = ThingMaker.MakeThing(ThingDefOf.Silver);
-                silverTax.stackCount = taxAmount;
-
-                // 生成在 Pawn 的位置
-                GenSpawn.Spawn(silverTax, pawn.Position, pawn.Map);
-
-                // 通知玩家税收已生成 (可选 Mote)
-                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Tax: {taxAmount} Silver", Color.white,2.5f);
-            }
-
-            // D. 反馈 Mote (显示总收入)
-            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Sold: +{netIncome}", Color.green, 3f);
-
-            //Log.Message(
-                //$"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
-
-            // 销毁临时 Thing (必须在所有计算完成后进行)
-            recreatedThing.Destroy();
+            
         }
-        
         private void OnJobFinished(JobCondition condition)
         {
             var carried = pawn.carryTracker?.CarriedThing;

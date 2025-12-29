@@ -19,6 +19,9 @@ namespace EconomicSystem
         // 一天的 Tick 数（RimWorld 常量）
         private const int TicksPerDay = 60000;
 
+        //三天缴纳一次个人所得税
+        private const int TickTaxDay = 180000; 
+
         // 上一次结算的天数
         private int lastProcessedDay = -1;
 
@@ -71,7 +74,6 @@ namespace EconomicSystem
                 ProcessPawnWage(pawn, economy);
             }
         }
-
         /// <summary>
         /// 处理单个 Pawn 的工资结算
         /// </summary>

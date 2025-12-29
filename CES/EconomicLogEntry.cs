@@ -10,7 +10,6 @@ namespace EconomicSystem
     public class EconomicLogEntry:IExposable
     {
         public string message; // 例如: "Bought 5 Fine Meal from [Pawn/TraderName] for 30 silver."
-        public Color color = Color.white; // 可选: 用于区分买入/卖出
 
 
         public EconomicLogEntry(){}
@@ -18,7 +17,6 @@ namespace EconomicSystem
         public void ExposeData()
         {
             Scribe_Values.Look(ref message, "message");
-            Scribe_Deep.Look(ref color, "color");
         }
         
         /// <summary>
@@ -27,12 +25,11 @@ namespace EconomicSystem
         /// <param name="msg">文本</param>
         /// <param name="logColor">颜色</param>
         /// <returns></returns>
-        public static EconomicLogEntry NewLog(string msg, Color? logColor = null)
+        public static EconomicLogEntry NewLog(string msg)
         {
             return new EconomicLogEntry
             {
-                message = msg,
-                color = logColor ?? Color.white 
+                message = msg.Colorize(Color.white)
             };
         }
         

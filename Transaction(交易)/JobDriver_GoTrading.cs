@@ -32,17 +32,6 @@ namespace EconomicSystem
             //⭐ 核心修正：直接尝试预定目标 Pawn
             // 预定参数：目标Pawn，当前Job，预定数量(1)，堆叠(-1)，错误标志(errorOnFailed)
             bool reserved = this.pawn.Reserve(targetPawn, this.job, 1, -1, null, errorOnFailed);
-            if (reserved)
-            {
-                //Log.Message(
-                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} 成功预定 {TargetPawn.NameShortColored}。");
-            }
-            else
-            {
-                // 如果预定失败，说明目标在 JobGiver 检查后到 JobDriver 启动前被别人抢走了
-                //Log.Warning(
-                    //$"[CES_DEBUG] JobDriver denied: {pawn.NameShortColored} 无法预定 {TargetPawn.NameShortColored}。");
-            }
 
             return reserved;
         }
@@ -196,10 +185,10 @@ namespace EconomicSystem
             }
 
             // 3. 计算价格
-            float baseValue = itemData.buyPrice ;
-            // 价格浮动：模拟砍价和加价 (75% 到 115%)+社交*0.03+智识*0.01
+            float baseValue = (int)recreatedThing.MarketValue* itemData.stackCount;
+            // 价格浮动：模拟砍价和加价 (65% 到 115%)+社交*0.03+智识*0.01
             //0.1f这10%是商业税，相当于先加价10%，然后卖家全额负担商品税10%
-            float priceFactor = Rand.Range(0.75f, 1.25f)+0.1f+
+            float priceFactor = Rand.Range(0.65f, 1.15f)+0.1f+
                                 pawn.skills.GetSkill(SkillDefOf.Social).Level*0.03f+
                                 pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
             int salePrice = Mathf.CeilToInt(baseValue * priceFactor);
@@ -222,15 +211,15 @@ namespace EconomicSystem
             {
                 //盈利售卖日志
                 pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{targetPawn.NameShortColored}\n" +
-                    $",净利润+{profit.ToString().Colorize(Color.green)}"));
+                    $"将{itemData.Name.Colorize(Color.yellow)}卖给{targetPawn.NameShortColored}" +
+                    $",利润+{profit.ToString().Colorize(Color.green)}"));
             }
             else
             {
                 //亏损售卖日志
                 pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}出售给{targetPawn.NameShortColored}\n" +
-                    $",净利润{profit.ToString().Colorize(Color.red)}"));
+                    $"将{itemData.Name.Colorize(Color.yellow)}麦给{targetPawn.NameShortColored}" +
+                    $",利润{profit.ToString().Colorize(Color.red)}"));
             }
             
             //买家添加物品并付钱给卖家
@@ -239,7 +228,7 @@ namespace EconomicSystem
                
                 //生成购买日志
                 targetPawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"从{pawn.NameShortColored}手中花费了{salePrice}白银购买了{itemData.Name.Colorize(Color.yellow)}"));
+                    $"从{pawn.NameShortColored}花费{salePrice}白银买{itemData.Name.Colorize(Color.yellow)}"));
                 
                 // B. 增加虚拟货币
                 targetPawn.GetEconomyData().virtualWallet -= salePrice;

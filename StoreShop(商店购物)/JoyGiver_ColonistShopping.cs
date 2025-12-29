@@ -10,8 +10,13 @@ namespace EconomicSystem
 {
     public class JoyGiver_ColonistShopping : JoyGiver
     {
+        private const int CooldownTicks = 250; 
+        private static readonly Dictionary<Pawn, int> lastTryTick = new();
+        
         public override float GetChance(Pawn pawn)
         {
+            
+            
             //只对殖民者有效
             if (pawn==null||!pawn.IsColonist)
             {
@@ -38,7 +43,7 @@ namespace EconomicSystem
             // 4. 计算概率
     
             //基础购物概率2%
-            float baseShoppingChance = 0.2f; 
+            float baseShoppingChance = 5f; 
     
             // 假设：在 15银时因子为 0.5，在 5000银时因子为 2.0 (您可以根据需要调整最大/最小影响)
             // Mathf.InverseLerp(min, max, value) 返回 0.0 到 1.0 之间的值
@@ -51,19 +56,21 @@ namespace EconomicSystem
             float finalChance = baseShoppingChance * walletFactor;
 
             //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: Base={baseShoppingChance:P2}, WalletFactor={walletFactor:F2}. Final Chance={finalChance:P2}.");
-    
-            // 确保概率不超过 1.0
-            return Mathf.Clamp01(finalChance); 
+            
+            return finalChance; 
         }
 
         public override Job TryGiveJob(Pawn pawn)
         {
-            
-            // 检查通用交易冷却（例如，刚才拒绝了某个商人的交易）
-            if (pawn.GetEconomyData().IsOnCooldown("ShopFail"))
+            int now = Find.TickManager.TicksGame;
+
+            if (lastTryTick.TryGetValue(pawn, out int last))
             {
-                return null;
+                if (now - last < CooldownTicks)
+                    return null;
             }
+            lastTryTick[pawn] = now;
+            
     
             // GetChance 已经确保了有物品和余额
             List<Thing> availableItems = ShoppingUtility.FindBuyableItemsInStockpiles(pawn);
@@ -73,8 +80,7 @@ namespace EconomicSystem
                 return null;
             }
             // --- 日志 1: 尝试触发 Job ---
-            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} is considering shopping...");
-
+            Log.Message($"[CES_DEBUG] {pawn.NameShortColored} is considering shopping...");
             // 迭代直到找到一个可以预定且能购买的物品
             foreach (Thing targetItem in availableItems)
             {
@@ -91,14 +97,9 @@ namespace EconomicSystem
                 // maxPawns=1, stackCount=-1 (预定整个堆栈)
                 if (pawn.Reserve(targetItem, newJob, 1, -1)) 
                 {
-                    // 预定成功！现在可以返回 Job
-                    //Log.Message($"[CES_DEBUG] Job accepted: {pawn.NameShortColored} successfully reserved {targetItem.LabelCap} with Job {newJob.def.defName}.");
                     return newJob;
                 }
             }
-
-            // 如果遍历完所有物品都无法预定（都被占用了），则返回 null
-            //Log.Message($"[CES_DEBUG] Job denied: All available items were reserved by others.");
             return null;
         }
     }

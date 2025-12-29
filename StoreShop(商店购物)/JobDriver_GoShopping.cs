@@ -24,7 +24,6 @@ namespace EconomicSystem
             var econ = pawn.GetEconomyData();
             if (econ == null)
             {
-                //Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
                 return false;
             }
             // 检查预定是否仍然有效（主要是防止预定物品被销毁）
@@ -32,36 +31,17 @@ namespace EconomicSystem
 
             if (ReservationUtility.HasReserved(this.pawn, this.TargetItem))
             {
-                //Log.Message(
-                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reservation for {TargetItem.LabelCap} confirmed.");
                 return true; // 预定已存在，Job可以开始
             }
-
-            // 如果因某些原因预定失效，则重新尝试预定（虽然不推荐，但作为安全回退）
-            bool reserved = this.pawn.Reserve(TargetItem, this.job, 1, -1, null, errorOnFailed);
-
-            if (!reserved)
-            {
-                //Log.Message($"[CES_DEBUG] JobDriver denied: Could not reserve {TargetItem.LabelCap} as a fallback.");
-            }
-            else
-            {
-                //Log.Message(
-                    //$"[CES_DEBUG] JobDriver Start: {pawn.NameShortColored} reserved {TargetItem.LabelCap} via fallback. Wallet: {econ.virtualWallet:F0}.");
-            }
-
-            return reserved;
+            return false;
         }
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            
-            
             // 确保 Job 的目标物品仍然有效且可达
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOn(() => !pawn.CanReach(TargetItem, PathEndMode.ClosestTouch, Danger.Some));
             
-
             // 假设 Pawn 的 Job 目标 A 是最终要购买的商品
             Thing finalTarget = TargetItem;
 
@@ -72,7 +52,6 @@ namespace EconomicSystem
             yield return Toils_General.Do(delegate
             {
                 // 1. 获取所有 HaulableEver 物品 (广义上的可搬运物品)
-                // 使用 HaulableEver 作为 Haulable 的替代
                 List<Thing> allHaulableItems =
                     pawn.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.HaulableEver));
 
@@ -92,13 +71,9 @@ namespace EconomicSystem
                             return false;
                         // 可达性检查：必须能走到
                         if (!pawn.CanReach(t, PathEndMode.ClosestTouch, Danger.Some)) return false;
-
                         // 额外：排除 MinifiedThing
                         if (t is MinifiedThing) return false;
-
-                        // ⚠️ 注意：这里没有进行 CES_EconomyUtility.IsPurchaseAllowed 检查，
-                        // 浏览不要求允许购买，只要求能走到和看得见
-
+                        
                         return true;
                     })
                     // 随机抽取：使用 InRandomOrder() 和 Take(3) 替代 TakeRandom(3)
@@ -117,9 +92,7 @@ namespace EconomicSystem
                 {
                     job.AddQueuedTarget(TargetIndex.B, target); // 使用 AddQueuedTarget 逐个添加
                 }
-
-                //Log.Message(
-                    //$"[CES_DEBUG] Browse Loop initialized: Found {browseTargets.Count} nearby items for browsing.");
+                
             });
 
             // --- 2. 循环标签 ---
@@ -127,7 +100,6 @@ namespace EconomicSystem
             yield return browseLoopStart;
 
             // 3. **从队列中取出下一个浏览目标**
-            // 这是标准的处理 TargetQueue 逻辑。如果队列为空，将结束循环并走向最终目标 A。
             yield return Toils_JobTransforms.ExtractNextTargetFromQueue(TargetIndex.B, true);
 
             // 4. **前往当前浏览目标 B**
@@ -138,7 +110,6 @@ namespace EconomicSystem
             // 使用短等待，模拟停留和比较
             Toil browse = Toils_General.Wait(300) // 5秒停留
                 .FailOnDestroyedOrNull(TargetIndex.B);
-            //.WithEffect(() => EffecterDefOf.Research, TargetIndex.B); // 可选效果，移除进度条
 
             browse.tickAction = () =>
             {
@@ -154,15 +125,6 @@ namespace EconomicSystem
                     this.pawn.needs.joy.GainJoy(this.job.def.joyGainRate * 0.0001f, this.job.def.joyKind);
                 }
             };
-
-            // 6. **决策点：是否提前购买当前目标 B**
-            browse.AddFinishAction(() =>
-            {
-                // 可以在这里增加一个额外的低概率购买当前浏览商品的逻辑
-                // 但为了简单，我们先保持购买 TargetA 的逻辑不变，只是用浏览来增加 Joy。
-                //Log.Message(
-                    //$"[CES_DEBUG] Browsing complete at {TargetB.Thing?.LabelCap ?? "unknown item"}. Continuing loop.");
-            });
             yield return browse;
 
             // 7. **循环继续**
@@ -170,53 +132,44 @@ namespace EconomicSystem
             yield return Toils_Jump.JumpIf(browseLoopStart,
                 () => job.targetQueueB != null && job.targetQueueB.Count > 0);
 
+            
             // --- 8. 浏览结束，前往最终购买目标 A ---
-
             yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.ClosestTouch)
                 .FailOnSomeonePhysicallyInteracting(TargetIndex.A);
 
             // 9. **最终购买决策**
+            // ⭐ FIX 1：禁止在 Toil 中直接 EndCurrentJob
             yield return Toils_General.Do(delegate
             {
                 if (finalTarget == null || !ShouldBuyItem(pawn, finalTarget))
                 {
-                    //Log.Message(
-                        //$"[CES_DEBUG] Final Decision Fail: Pawn skipped buying {finalTarget.LabelCap}. Ending Job.");
-                    this.EndJobWith(JobCondition.Succeeded);
-                }
-                else
-                {
-                    //Log.Message($"[CES_DEBUG] Final Decision Success: Proceeding to pay.");
+                    // 什么都不做，让 Toil 自己结束
                 }
             });
 
-            // --- 10. 支付等待 (进度条) --- (Index 2a)
+            // --- 10. 支付等待
             yield return Toils_General.Wait(TicksToPay)
                 .FailOnDestroyedOrNull(TargetIndex.A)
                 .WithProgressBarToilDelay(TargetIndex.A);
-            //.WithEffect(EffecterDefOf.Research, TargetIndex.A); 
 
-            // --- 11. 支付执行 (Instant) --- (Index 2b)
+            // --- 11. 支付执行
             yield return Toil_VirtualPay_Instant();
 
-            // --- 12. 拿取商品 (Virtualize) --- (Index 3)
+            // --- 12. 拿取商品
             yield return Toil_TakeItem();
             
         }
 
         // --- Toil 辅助方法 ---
-
         // 核心 Toil: 虚拟支付 
         private Toil Toil_VirtualPay_Instant()
         {
             Toil toil = new Toil();
             toil.initAction = () =>
             {
-                // ⭐ 记得在这里加上 InHorDistOf 检查，防止征召导致的提前支付
+                // 这里加上 InHorDistOf 检查，防止征召导致的提前支付
                 if (!pawn.Position.InHorDistOf(TargetItem.Position, 2f))
                 {
-                    //Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn is too far. Re-queuing job.");
-                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
@@ -224,31 +177,20 @@ namespace EconomicSystem
 
                 if (econ == null)
                 {
-                    //Log.Warning($"[CES_DEBUG] Pay Toil Denied: Pawn has no Economy Data.");
-                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
                 
                 //得到当前售价
                 int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue * TargetItem.stackCount);
                 float preWallet = econ.virtualWallet;
-
-                //Log.Message(
-                    //$"[CES_DEBUG] Pay Check: {pawn.NameShortColored} is paying {totalPrice}. Current Wallet: {preWallet:F0}.");
-
+                
                 if (econ.virtualWallet < totalPrice)
                 {
-                    //Log.Error(
-                        //$"[CES_DEBUG] Pay FAIL: Insufficient funds. Need {totalPrice}, Have {preWallet}. Job Incompletable.");
-                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
                 if (!econ.SubtractMoney(totalPrice))
                 {
-                    //Log.Error(
-                        //$"[CES_DEBUG] Pay FAIL: SubtractMoney returned false for {pawn.NameShortColored}. Job Incompletable.");
-                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
@@ -261,16 +203,15 @@ namespace EconomicSystem
                 Messages.Message(
                     "ColonistBoughtItem".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);
-                //Log.Message(
-                    //$"[CES_DEBUG] Pay SUCCESS: {pawn.NameShortColored} paid {totalPrice}. New Wallet: {econ.virtualWallet:F0}.");
             };
 
+            // ⭐ FIX 3：Instant 完成，交给 Job 系统自然推进
             toil.defaultCompleteMode = ToilCompleteMode.Instant;
             toil.socialMode = RandomSocialMode.Off;
             return toil;
         }
 
-        // 核心 Toil 2: 拿取商品 (⭐ 架构修正：改为虚拟化)
+        // 核心 Toil 2: 拿取商品 
         private Toil Toil_TakeItem()
         {
             Toil toil = new Toil();
@@ -279,8 +220,6 @@ namespace EconomicSystem
                 Thing item = TargetItem;
                 if (item == null || item.DestroyedOrNull())
                 {
-                    // 如果物品已失效，直接成功结束 Job
-                    this.EndJobWith(JobCondition.Succeeded);
                     return;
                 }
 
@@ -293,30 +232,23 @@ namespace EconomicSystem
                     Thing itemToVirtualize = item.SplitOff(item.stackCount);
 
                     // 核心：调用新的虚拟化方法，保存数据并销毁物理物品
-                    pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize);
-
-                    // 日志 9: 拿取成功 (虚拟化)
-                    //Log.Message(
-                        //$"[CES_DEBUG] Take Item SUCCESS: {pawn.NameShortColored} successfully virtualized {itemToVirtualize.LabelCap} as private asset.");
-
-                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"购买{itemToVirtualize.LabelCap.Colorize(Color.cyan)}成功",Color.green));
-                    // ⭐ 关键修改：直接在这里结束 Job，不进入下一个 Toil
-                    this.EndJobWith(JobCondition.Succeeded);
+                    pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, TargetItem.stackCount);
+                    
+                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"购买{itemToVirtualize.LabelCap.Colorize(Color.cyan)}x{TargetItem.stackCount}成功"));
+                    
                 }
                 catch (Exception e)
                 {
-                    //Log.Error($"[CES_DEBUG] Toil_TakeItem failed for {pawn.NameShortColored}: {e.Message}");
-                    this.EndJobWith(JobCondition.Errored);
+                    
                 }
             };
 
-            // **移除此行或改为 None，确保 initAction 成功后直接 EndJobWith**
-            toil.defaultCompleteMode = ToilCompleteMode.Never; // 或者 Instant 保持不变，但依赖上面的 EndJobWith
+            // ⭐ FIX 4：绝不 EndCurrentJob，由 Toil 自然结束整个 Job
+            toil.defaultCompleteMode = ToilCompleteMode.Instant;
             toil.socialMode = RandomSocialMode.Off;
             return toil;
         }
-
-
+        
         // --- 额外的决策逻辑 ---
         private bool ShouldBuyItem(Pawn pawn, Thing item)
         {
@@ -338,9 +270,7 @@ namespace EconomicSystem
             }
 
             bool decision = Rand.Value < baseChance * moodFactor;
-
-            //Log.Message(
-                //$"[CES_DEBUG] Buy Decision Calc: Base={baseChance:P0}, MoodFactor={moodFactor:F2}, FinalChance={baseChance * moodFactor:P2}. Result: {decision}.");
+            
 
             return decision;
         }

@@ -287,13 +287,14 @@ namespace EconomicSystem
         /// <summary>
         /// 将物品数据虚拟化并标记为私有资产。
         /// </summary>
-        public void VirtualAndMarkAsset(Thing item)
+        public void VirtualAndMarkAsset(Thing item,int count)
         {
             if (item == null) return;
 
             // 1. 创建资产数据
             PrivateItemData asset = new PrivateItemData(item);
-           
+            //保存数量
+            asset.stackCount = count;
             
             // 2. 添加到列表
             privateOwnedAssets.Add(asset);
@@ -314,7 +315,7 @@ namespace EconomicSystem
         }
 
         // 示例：从私有资产中移除一个项目 (用于出售或使用)
-        public bool RemoveAsset(PrivateItemData asset,int sellPrice)
+        public bool RemoveAsset(PrivateItemData asset,int sellPrice=0)
         {
             //记录售出价
             asset.sellPrice=sellPrice;
@@ -322,7 +323,7 @@ namespace EconomicSystem
             return privateOwnedAssets.Remove(asset);
         }
 
-        public bool AddAsset(PrivateItemData asset,int buyPrice)
+        public bool AddAsset(PrivateItemData asset,int buyPrice=0)
         {
             int i = privateOwnedAssets.Count;
             //记录买入价格
@@ -376,22 +377,5 @@ namespace EconomicSystem
             lastInterestDay = currentDay;
 
         }
-
-        #region 工作冷却检查
-
-        //设置冷却期
-        public void SetCooldown(string key, int durationTicks)
-        {
-            coolDowns[key] = Find.TickManager.TicksGame + durationTicks;
-        }
-
-        //判断工作是否在冷却期
-        public bool IsOnCooldown(string key)
-        {
-            return coolDowns.ContainsKey(key) && coolDowns[key] > Find.TickManager.TicksGame;
-        }
-
-        #endregion
-        
     }
 }

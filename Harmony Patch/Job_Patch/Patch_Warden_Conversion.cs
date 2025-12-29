@@ -45,7 +45,7 @@ namespace EconomicSystem
                 return;
 
             // 认同度减少量作为工作价值
-            data.AddWork(WorkTypeDefOf.Warden, certaintyReduced*100); 
+            data.AddWork(WorkTypeDefOf.Warden, certaintyReduced); 
 
             /*Log.Message(
                 $"[CES] 教化-降认同 | {warden.NameShortColored} | " +

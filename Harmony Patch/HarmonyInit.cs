@@ -9,9 +9,9 @@ namespace EconomicSystem
     {
         static HarmonyInit()
         {
-            var harmony = new Harmony("Astesia.EconomicSystem");
+            var harmony = new Harmony("Polaris.CES");
             harmony.PatchAll();
+            
         }
     }
-    
 }

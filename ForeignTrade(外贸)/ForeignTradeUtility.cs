@@ -8,7 +8,10 @@ namespace EconomicSystem
 {
     public class ForeignTradeUtility
     {
-        // 辅助方法 1: 将您原来的 FindBestTraderPawn 逻辑的检查部分移到这里
+        private static List<ThingDef> cachedInjectableDefs;
+        
+        
+        // 辅助方法 
         public static bool IsViableTrader(Pawn forPawn, Pawn p)
         {
             const float MaxTradeDistance = 40f; 
@@ -55,6 +58,39 @@ namespace EconomicSystem
 
             // 从筛选后的列表中随机选择一个
             return sellableItems.RandomElement(); 
+        }
+        
+        
+    
+        /// <summary>
+        /// 得到等价白银的随机商品
+        /// </summary>
+        /// <param name="maxValue">最大价值</param>
+        /// <returns>包含随机物品的列表</returns>
+        public static ThingDef GetRandomInjectableThingDef(int maxValue)
+        {
+            // 首次调用时缓存所有合适的 ThingDef
+            if (cachedInjectableDefs == null)
+            {
+                cachedInjectableDefs = DefDatabase<ThingDef>.AllDefs
+                    // 必须在殖民地环境中有意义的物品
+                    .Where(def => def.IsStuff || def.IsIngestible || def.isUnfinishedThing || def.IsApparel || def.IsWeapon) 
+                    // 排除一些特殊或不合适的物品
+                    .Where(def => !def.IsCorpse && !def.IsShell && def.category == ThingCategory.Item && def.BaseMarketValue > 0f)
+                    .Where(def => !def.defName.Contains("Silver")) // 排除白银本身
+                    .ToList();
+            }
+        
+            // 筛选出 MarketValue 不超过目标价值的物品，以防止生成价值过高的单品
+            var viableDefs = cachedInjectableDefs.Where(def => def.BaseMarketValue <= maxValue).ToList();
+        
+            if (viableDefs.Any())
+            {
+                return viableDefs.RandomElement();
+            }
+        
+            // 如果找不到合适的，返回 null
+            return null; 
         }
     }
 }
