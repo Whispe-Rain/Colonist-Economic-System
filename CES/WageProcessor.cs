@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -82,15 +83,51 @@ namespace EconomicSystem
             var data = pawn.GetEconomyData();
             if (data == null)
                 return;
+            
+            var workSettings = pawn.workSettings;
+            if (workSettings == null)
+                return;
+            
+            foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+               
+                
+                // 1. 该工作是否启用
+                if (!workSettings.WorkIsActive(workType))
+                    continue;
 
-            float rawWage = data.CalculatePendingWage();
+                // 2. 获取该工作的主要技能
+                SkillDef skillDef = workType.relevantSkills?.FirstOrDefault();
+                if (skillDef == null)
+                    continue;
+
+                // 3. 读取 Pawn 的技能等级
+                SkillRecord skill = pawn.skills.GetSkill(skillDef);
+                if (skill == null)
+                    continue;
+                
+                //得到技能等级，基础工资，工作优先级
+                int skillLevel = skill.Level;
+                int basePrice = WageUtility.GetBaseWage(workType);
+                int priority = workSettings.GetPriority(workType);
+
+                //只统计优先级1,2的工作,其他忽略。
+                if (priority>2)
+                {
+                    continue;
+                }
+                // 4. 写入经济数据
+                data.AddWork(workType, basePrice, skillLevel,priority);
+            }
+            
+            float rawWage = data.CalculatePendingWage(data.workPriceByType);
+            
             int wageToPay = Mathf.FloorToInt(rawWage);
 
             if (wageToPay <= 0)
                 return;
-
+            
             bool paid = economy.TryConsumeSilver(wageToPay);
-
             if (paid)
             {
                 //加上待发工资和欠薪(如果有的话)
@@ -117,6 +154,12 @@ namespace EconomicSystem
                 Log.Warning(
                     $"[CES] Unpaid wage | {pawn.NameShortColored} owed {wageToPay}"
                 );
+            }
+            
+            //结算工资时顺便更新殖民者所有私人物品的溢价或降价
+            foreach (var item in data.privateOwnedAssets)
+            {
+                item.priceChange+=Rand.Range(-0.5f, 0.5f);
             }
         }
 

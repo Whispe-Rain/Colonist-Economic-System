@@ -94,7 +94,7 @@ namespace EconomicSystem
                 totalCorrection+=0.05f;
             }
             return totalCorrection;
-        }                        
+        }
         
     }
 }

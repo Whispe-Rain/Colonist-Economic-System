@@ -92,7 +92,8 @@ namespace EconomicSystem
 
             // --- Toil 2: 追逐/互动 Toil（Wait with Jump） ---
             // 使用 Wait 模拟交谈时间，并将 目标 设置为面向目标
-            Toil interaction = Toils_General.Wait(TicksToChat, TargetIndex.A);
+            Toil interaction = Toils_General.Wait(TicksToChat, TargetIndex.A)
+                .WithProgressBarToilDelay(TargetIndex.A);;
 
             // 核心逻辑：持续检查距离并提供视觉反馈
             interaction.tickAction = delegate
@@ -154,9 +155,8 @@ namespace EconomicSystem
 
             if (itemData == null)
             {
-                //Log.Warning(
-                    //$"[CES] {pawn.NameShortColored} failed trade: 物品 '{defName}' 没有在私人背包中找到.");
                 // 如果物品找不到了，直接返回成功，避免无限 Job 失败
+                pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                 return;
             }
 
@@ -167,7 +167,6 @@ namespace EconomicSystem
             if (recreatedThing == null)
             {
                 //Log.Error($"[CES] 用于交易的物品重建‘{defName}’失败");
-                data.privateOwnedAssets.Remove(itemData); // 移除损坏的数据
                 return;
             }
 
@@ -176,6 +175,7 @@ namespace EconomicSystem
             {
                 //recreatedThing.Destroy(); // 销毁临时 Thing
                 MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "TradeFailed".Translate(), Color.red, 3f);
+                
                 return ;
             }
 
@@ -186,12 +186,13 @@ namespace EconomicSystem
 
             // 3. 计算价格
             float baseValue = (int)recreatedThing.MarketValue* itemData.stackCount;
-            // 价格浮动：模拟砍价和加价 (65% 到 115%)+社交*0.03+智识*0.01
+            // 价格浮动：不可控的市场浮动（-0.5~0.5）+社交*0.01+智识*0.01+0.1
             //0.1f这10%是商业税，相当于先加价10%，然后卖家全额负担商品税10%
-            float priceFactor = Rand.Range(0.65f, 1.15f)+0.1f+
-                                pawn.skills.GetSkill(SkillDefOf.Social).Level*0.03f+
-                                pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
-            int salePrice = Mathf.CeilToInt(baseValue * priceFactor);
+            float priceFactor =itemData.priceChange+0.1f+
+                               pawn.skills.GetSkill(SkillDefOf.Social).Level*0.01f+
+                               pawn.skills.GetSkill(SkillDefOf.Intellectual).Level*0.01f;
+            
+            int salePrice = Mathf.CeilToInt(baseValue+baseValue * priceFactor);
 
             // 4. 计算税收 (10% 商业税)
             int taxAmount = Mathf.CeilToInt(salePrice * 0.10f);

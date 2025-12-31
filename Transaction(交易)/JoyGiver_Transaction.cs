@@ -36,20 +36,17 @@ namespace EconomicSystem
             }
             
             //概率计算
-            float baseShoppingChance = 5f; 
+            float baseShoppingChance = 15f; 
             
             //财富值越高越不容易售卖物品，反之越容易出售物品
-            float walletScale = Mathf.InverseLerp(3000f, 50f, data.virtualWallet); 
+            float walletScale = Mathf.InverseLerp(2000f, 50f, data.virtualWallet); 
     
             // 将 0~1 的 walletScale 映射到 0.5~2.0 的因子范围 (线性映射)
-            float walletFactor = 0.5f + walletScale * 1.5f; 
+            float walletFactor = 0.5f + walletScale *2f; 
     
             // 最终概率
             float finalChance = baseShoppingChance * walletFactor;
-
-            //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} GetChance: 基础概率={baseShoppingChance:P2}, 财富因素={walletFactor:F2}. 最终出售概率={finalChance:P2}.");
-    
-            // 确保概率不超过 1.0
+            
             return finalChance; 
             
         }

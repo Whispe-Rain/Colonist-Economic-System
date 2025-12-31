@@ -21,78 +21,86 @@ namespace EconomicSystem
 
             Map map = pawn.Map;
 
-            // 获取购物区域（假设叫"购物区"）
-            var buyArea = map.areaManager.GetLabeled("购物区") as Area_Buy;
+            //得到购物区
+            var buyArea = map.areaManager.AllAreas.OfType<Area_Buy>().FirstOrDefault();
             if (buyArea == null)
             {
-                // 购物区不存在，返回空
-                Log.Message("未设置购物区");
+                Log.Message("未找到 Area_Buy 类型的购物区");
                 return new List<Thing>();
             }
+
             
             HashSet<Thing> allItems = new HashSet<Thing>();
 
-            // 1. 遍历购物区域内所有激活格子
             foreach (IntVec3 cell in buyArea.ActiveCells)
             {
                 if (!cell.InBounds(map))
                     continue;
 
-                // 1.1 取格子上的所有物品（地图上散落的）
-                List<Thing> thingsAtCell = map.thingGrid.ThingsListAt(cell);
-
-                foreach (var thing in thingsAtCell)
-                {
-                    if (thing.Faction == Faction.OfPlayer && !(thing is Pawn) && !(thing is Corpse) && !(thing is MinifiedThing))
-                    {
-                        allItems.Add(thing);
-                    }
-                }
-            }
-
-            // 2. 遍历购物区域内所有物体，找储存容器里的物品
-            // 包括MOD添加的储物箱（IThingHolder接口）
-            foreach (IntVec3 cell in buyArea.ActiveCells)
-            {
-                if (!cell.InBounds(map))
-                    continue;
-
+                // === 1️⃣ 地面 & 建筑扫描 ===
                 var thingsAtCell = map.thingGrid.ThingsListAt(cell);
 
                 foreach (var thing in thingsAtCell)
                 {
-                    // 排除非玩家势力的和特殊类型
-                    if (thing.Faction != Faction.OfPlayer || thing is Pawn || thing is Corpse || thing is MinifiedThing)
+                    if (thing is Pawn || thing is Corpse || thing is MinifiedThing)
                         continue;
 
-                    IThingHolder holder = thing as IThingHolder;
-
-                    // 若物体自身不是容器，尝试查找实现IThingHolder的Comp
-                    if (holder == null && thing is ThingWithComps twc)
+                    // ❌ 不把建筑本体当商品
+                    if (thing is Building)
                     {
-                        holder = twc.AllComps.OfType<IThingHolder>().FirstOrDefault();
-                    }
-
-                    if (holder != null)
-                    {
-                        // 递归获取该容器内所有物品
-                        List<Thing> heldThings = new List<Thing>();
-                        ThingOwnerUtility.GetAllThingsRecursively(holder, heldThings, allowUnreal: true);
-
-                        foreach (var heldThing in heldThings)
+                        // === 2️⃣ 原版存储：SlotGroup ===
+                        SlotGroup slotGroup = thing.GetSlotGroup();
+                        if (slotGroup != null)
                         {
-                            allItems.Add(heldThing);
+                            foreach (Thing stored in slotGroup.HeldThings)
+                            {
+                                allItems.Add(stored);
+                            }
                         }
+
+                        // === 3️⃣ MOD 容器：IThingHolder ===
+                        IThingHolder holder = thing as IThingHolder;
+                        if (holder == null && thing is ThingWithComps twc)
+                        {
+                            holder = twc.AllComps.OfType<IThingHolder>().FirstOrDefault();
+                        }
+
+                        if (holder != null)
+                        {
+                            List<Thing> heldThings = new List<Thing>();
+                            ThingOwnerUtility.GetAllThingsRecursively(holder, heldThings, allowUnreal: true);
+                            foreach (var held in heldThings)
+                            {
+                                allItems.Add(held);
+                            }
+                        }
+
+                        continue;
                     }
+
+                    // === 普通地面物品 ===
+                    allItems.Add(thing);
                 }
             }
 
+            Log.Warning("初步筛选："+allItems.Count);
             // 3. 过滤满足条件的物品
             IEnumerable<Thing> filteredItems = allItems.Where(t =>
             {
+                // === 致命防御：MinifiedThing ===
+                if (t is MinifiedThing minified)
+                {
+                    // inner 为空 → 直接丢弃
+                    if (minified.InnerThing == null)
+                        return false;
+
+                    // 即使 inner 不为空，也不允许交易
+                    return false;
+                }
+
                 
-                // 先排除建筑物,避免把货架搬走
-                if (t is Building)
+                // 例如：必须是 Item
+                if (t.def.category != ThingCategory.Item)
                     return false;
                 
                 // 基本检查
@@ -106,14 +114,17 @@ namespace EconomicSystem
                 // 排除被装备的物品
                 if (t.ParentHolder is Pawn)
                     return false;
-
-                // 路径可达性检测
-                if (!pawn.CanReach(ThingOwnerUtility.GetFirstSpawnedParentThing(t) ?? t, PathEndMode.ClosestTouch, Danger.Some))
-                    return false;
-
+                
+                // ✅ 只有【已 Spawn 的地面物品】才做 CanReach
+                if (t.Spawned)
+                {
+                    if (!pawn.CanReach(t, PathEndMode.ClosestTouch, Danger.Some))
+                        return false;
+                }
+                
                 return true;
             });
-
+            Log.Warning("最终："+filteredItems.ToList().Count);
             // 返回随机打乱的列表
             return filteredItems.ToList().InRandomOrder().ToList();
         }

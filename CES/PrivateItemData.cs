@@ -14,8 +14,11 @@ namespace EconomicSystem
         public float hitPointsPct;  // 耐久度百分比 (0.0 - 1.0)
         public QualityCategory? quality; // 品质 (如果物品有品质)
         public string stuffDefName; // 材质 Def (例如: Plasteel)
+        public Texture2D stuffTex;
+        
         // 可以根据需要添加更多属性（例如，制造者、名称等）
-
+        
+        public float priceChange;//商品溢价和降价的力度
 
         public int buyPrice;//买入价
         public int sellPrice;//卖出价
@@ -25,6 +28,11 @@ namespace EconomicSystem
         
         //得到物品的具体名字
         public TaggedString Name => this.RecreateThing().def.LabelCap;
+        
+        //返回商品的售价（只用于玩家购买）
+        public int Price=>(int)(this.RecreateThing().MarketValue
+                                +this.RecreateThing().MarketValue*priceChange);
+        
 
         // 从现有 Thing 实例化的构造函数
         public PrivateItemData(Thing t)
@@ -116,5 +124,7 @@ namespace EconomicSystem
             
             return newThing;
         }
+        
+        
     }
 }

@@ -78,6 +78,7 @@ namespace EconomicSystem
                     // 排除一些特殊或不合适的物品
                     .Where(def => !def.IsCorpse && !def.IsShell && def.category == ThingCategory.Item && def.BaseMarketValue > 0f)
                     .Where(def => !def.defName.Contains("Silver")) // 排除白银本身
+                    .Where(def => def.FirstThingCategory!=ThingCategoryDefOf.Manufactured)
                     .ToList();
             }
         

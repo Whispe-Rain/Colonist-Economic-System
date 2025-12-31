@@ -150,7 +150,7 @@ namespace EconomicSystem
             // --- 10. 支付等待
             yield return Toils_General.Wait(TicksToPay)
                 .FailOnDestroyedOrNull(TargetIndex.A)
-                .WithProgressBarToilDelay(TargetIndex.A);
+                .WithProgressBarToilDelay(TargetIndex.B);
 
             // --- 11. 支付执行
             yield return Toil_VirtualPay_Instant();
@@ -170,6 +170,7 @@ namespace EconomicSystem
                 // 这里加上 InHorDistOf 检查，防止征召导致的提前支付
                 if (!pawn.Position.InHorDistOf(TargetItem.Position, 2f))
                 {
+                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
@@ -177,6 +178,7 @@ namespace EconomicSystem
 
                 if (econ == null)
                 {
+                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
                 
@@ -186,11 +188,13 @@ namespace EconomicSystem
                 
                 if (econ.virtualWallet < totalPrice)
                 {
+                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
                 if (!econ.SubtractMoney(totalPrice))
                 {
+                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
@@ -199,9 +203,10 @@ namespace EconomicSystem
                 silver.stackCount = totalPrice;
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
                 
+                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"花费{totalPrice}购买{TargetItem.LabelCap.Colorize(Color.cyan)}"));
                 
                 Messages.Message(
-                    "ColonistBoughtItem".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
+                    $"{pawn.LabelShort}购买了{TargetItem.LabelCap}：".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);
             };
 
@@ -220,6 +225,7 @@ namespace EconomicSystem
                 Thing item = TargetItem;
                 if (item == null || item.DestroyedOrNull())
                 {
+                    pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
@@ -234,7 +240,7 @@ namespace EconomicSystem
                     // 核心：调用新的虚拟化方法，保存数据并销毁物理物品
                     pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, TargetItem.stackCount);
                     
-                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"购买{itemToVirtualize.LabelCap.Colorize(Color.cyan)}x{TargetItem.stackCount}成功"));
+                   
                     
                 }
                 catch (Exception e)

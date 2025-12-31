@@ -81,20 +81,6 @@ namespace EconomicSystem
                 Messages.Message($"{pawn.NameShortColored} Unpaid Wage Cleared.", MessageTypeDefOf.NeutralEvent, false);
             }
         }
-
-        // --- 3. 工作量操作 (用于测试工资计算) ---
-
-        [DebugAction(GroupName, "Work: Add 100 Research", allowedGameStates = AllowedGameStates.PlayingOnMap)]
-        public static void AddResearchWork()
-        {
-            if (GetSelectedPawnData(out Pawn pawn) is CES_PawnEconomyData econ)
-            {
-                econ.AddWork(WorkTypeDefOf.Research, 100f);
-                float pendingWage = econ.CalculatePendingWage();
-                Messages.Message($"{pawn.NameShortColored} Research Work Added. Pending Wage: {pendingWage:F0}", MessageTypeDefOf.NeutralEvent, false);
-            }
-        }
-
         [DebugAction(GroupName, "Work: Clear All Work", allowedGameStates = AllowedGameStates.PlayingOnMap)]
         public static void ClearAllWork()
         {

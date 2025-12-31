@@ -1,10 +1,12 @@
-using RimWorld;
-using UnityEngine;
-using Verse;
+
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using RimWorld;
+using UnityEngine;
+using Verse;
 
 namespace EconomicSystem
 {
@@ -20,6 +22,9 @@ namespace EconomicSystem
         private float viewHeightVirtual;
 
         private Vector2 scrollPosLog = Vector2.zero; // ⭐ 新增：用于 Log 面板的滚动位置
+        
+        //记录玩家要买的物品。
+        private PrivateItemData pendingBuyItem;
 
         // 健壮的 Pawn 获取属性
         private Pawn Pawn
@@ -121,7 +126,7 @@ namespace EconomicSystem
                 $"工资系数:{Correction:F2}");
             curY += lineHeight;
 
-            float totalWage = data.CalculatePendingWage();
+            float totalWage = data.CalculatePendingWage(data.dailyWorkPreview);
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
                 $"工资:{totalWage:F0}");
             curY += lineHeight + 16f;
@@ -158,71 +163,80 @@ namespace EconomicSystem
                 Widgets.Label(scrollRect, "无工作数据");
                 return;
             }
-
-            // ⭐ 先计算 viewHeight
-            foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-            {
-                if (!workSettings.WorkIsActive(workType))
-                    continue;
-
-                if (data.GetWageByWorkType(workType) > 0.01f)
-                    viewY += rowHeight;
-            }
-
-            viewHeight = viewY + 10f;
-
+            
+            List<WorkWagePreview> previews = data.dailyWorkPreview;
+            
+            viewHeight = previews.Count() * rowHeight + 10f;
             Rect viewRect = new Rect(0f, 0f, scrollRect.width - 16f, viewHeight);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
 
-            // ===== 真正绘制行 =====
             float drawY = 0f;
 
-            foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            int index = 0;
+            foreach (var p in previews)
             {
-                if (!workSettings.WorkIsActive(workType))
-                    continue;
-
-                float wage = data.GetWageByWorkType(workType);
-                if (wage <= 0.01f)
-                    continue;
-
-                int priority = workSettings.GetPriority(workType);
-
                 Rect row = new Rect(0f, drawY, viewRect.width, rowHeight);
+                //按照优先级添加边框线
+                Color outline=Color.white;
+                if (p.priority == 1)
+                    outline = new Color(1f, 1f, 0, 1f);   // 金色
+                else if (p.priority == 2)
+                    outline = new Color(1f, 1f, 1f, 1f);  // 银灰
+                // ⭐ 斑马纹背景
+                Color bg=Color.black;
+                switch (WageUtility.GetSkillFactor(p.skillLevel).Item1)
+                {
+                    case "见习":
+                        bg =Color.gray;;
+                        break;
+                    case "入门":
+                        bg = Color.white;
+                        break;
+                    case "标准":
+                        bg = Color.green;
+                        break;
+                    case "熟练":
+                        bg =Color.cyan;
+                        break;
+                    case "专家":
+                        bg = Color.magenta;
+                        break;
+                    case "大师":
+                        bg =Color.yellow; 
+                        break;
+                }
+                Widgets.DrawBoxSolidWithOutline(row, bg,outline);
+                
+                string label =p.workType.labelShort ?? p.workType.label;
 
-                // ===== 文字颜色 =====
-                string label = workType.labelShort ?? workType.label;
-                if (priority == 1)
+                // ⭐ 优先级标识
+                if (p.priority == 1)
                     label = ("★ " + label).Colorize(Color.white);
-                else if (priority >= 4)
+                else if (p.priority >= 4)
                     label = label.Colorize(Color.gray);
 
-                Rect labelRect = new Rect(row.x, row.y, row.width * 0.35f, row.height);
-                Widgets.Label(labelRect, label);
-
-                // ===== 占比条 =====
-                Rect barRect = new Rect(
-                    labelRect.xMax + 6f,
-                    row.y + 6f,
-                    row.width * 0.4f,
-                    row.height - 12f
+                // 左：岗位
+                Widgets.Label(new Rect(0f, drawY, row.width * 0.3f, rowHeight), label);
+                
+                // 中：技能 + 倍率
+                Widgets.Label(
+                    new Rect(row.width * 0.32f, drawY, row.width * 0.3f, rowHeight),
+                    $"Lv{p.skillLevel}|{WageUtility.GetSkillFactor(p.skillLevel).Item2:F2}"
                 );
 
-                float pct = totalWage * Correction > 0f ? wage / totalWage * Correction : 0f;
-                Widgets.FillableBar(barRect, pct);
-                Widgets.DrawBox(barRect);
-
-                // ===== 工资数值 =====
-                Rect valueRect = new Rect(barRect.xMax + 6f, row.y, row.width * 0.2f, row.height);
+                // 右：工资
                 Text.Anchor = TextAnchor.MiddleRight;
-                Widgets.Label(valueRect, wage.ToString("F0"));
+                Widgets.Label(
+                    new Rect(row.width * 0.6f, drawY, row.width * 0.38f, rowHeight),
+                    $"¥{data.GetWage(p.workType,data.dailyWorkPreview):F0}"
+                );
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 TooltipHandler.TipRegion(row,
-                    $"{workType.label}\n累计工资：{wage:F0}");
+                    $"{p.workType.label}\n技能等级：{p.skillLevel}\n基础岗位价：{p.basePrice:F0}\n优先级：{p.priority}");
 
-                drawY += rowHeight;
+                drawY += rowHeight+6f;
             }
 
             Widgets.EndScrollView();
@@ -324,14 +338,31 @@ namespace EconomicSystem
                     iconSize,
                     iconSize
                 );
-                Widgets.ThingIcon(iconRect, tempThing);
+                Widgets.ThingIcon(iconRect, tempThing.def);
 
                 // 4. 物品标签 (名称和数量)
+                float buttonWidth = 56f;
+                float priceWidth = 70f;
+
                 Rect labelRect = new Rect(
                     iconRect.xMax + Padding,
                     contentRect.y,
-                    contentRect.width - iconSize - Padding,
+                    contentRect.width - iconSize - Padding - buttonWidth - priceWidth,
                     contentRect.height
+                );
+
+                Rect priceRect = new Rect(
+                    labelRect.xMax,
+                    contentRect.y,
+                    priceWidth,
+                    contentRect.height
+                );
+
+                Rect buttonRect = new Rect(
+                    priceRect.xMax + Padding,
+                    contentRect.y + 4f,
+                    buttonWidth,
+                    contentRect.height - 8f
                 );
 
                 Text.Anchor = TextAnchor.MiddleLeft;
@@ -343,15 +374,42 @@ namespace EconomicSystem
 
                 Widgets.Label(labelRect, label);
                 Text.Anchor = TextAnchor.UpperLeft;
+                
+                //得到售价（已包含每日价格变化）
+                float price = assetData.Price;
+                float priceChange = assetData.priceChange;
+                String changeStr = priceChange <= 0 ? "折扣:".Colorize(Color.green) : "溢价:".Colorize(Color.red);
+                
+                Text.Anchor = TextAnchor.MiddleRight;
+                Widgets.Label(priceRect, $"¥{price:F0}".Colorize(priceChange<0?Color.green:Color.red));
+                Text.Anchor = TextAnchor.UpperLeft;
+                
+                if (Widgets.ButtonText(buttonRect, "购买"))
+                {
+                    //⭐因为ITab不允许在结束前修改UI的数据结构，
+                    //我们先记录
+                    pendingBuyItem = assetData;
+                    
+                }
 
                 // 5. 工具提示
                 TooltipHandler.TipRegion(fullRowRect, () => tempThing.DescriptionDetailed, assetData.GetHashCode());
-
+                TooltipHandler.TipRegion(
+                    priceRect,
+                    $"{changeStr}:{priceChange*100:F0}%"
+                );
                 tempThing.Destroy();
                 // drawY 已经在 DrawBoxedRowBackground 中递增，不需要再手动增加
             }
 
             Widgets.EndScrollView();
+            
+            // ⭐ UI 绘制完成后再处理交易
+            if (pendingBuyItem != null)
+            {
+                ITabUtility.TryBuyPrivateItem(pawn, pendingBuyItem);
+                pendingBuyItem = null;
+            }
         }
 
 
@@ -431,9 +489,6 @@ namespace EconomicSystem
                 float contentHeight = textHeight + (2 * Padding);
 
                 // 2. **调用抽象方法绘制背景和边框**
-                // 注意：这里需要传入整个 viewRect.width 作为 rect.width
-                // 我们需要传递一个包含当前行信息的 Rect，但为了简化，直接用 viewRect.width
-
                 // **!!! 关键步骤: 绘制并更新 drawY !!!**
                 drawY = DrawBoxedRowBackground(
                     new Rect(0f, 0f, actualDrawWidth, 0f), // 传入宽度信息
@@ -462,6 +517,7 @@ namespace EconomicSystem
                 // 绑定到绘制背景时的矩形，即：
                 Rect tooltipRect = new Rect(0f, textStartX, actualDrawWidth, contentHeight);
                 TooltipHandler.TipRegion(tooltipRect, logEntry.message);
+                
             }
 
             Widgets.EndScrollView();

@@ -4,12 +4,26 @@ using Verse;
 
 namespace EconomicSystem
 {
+    
+    public struct WorkWagePreview
+    {
+        //工作类型
+        public WorkTypeDef workType;
+        //基础工资
+        public int basePrice;
+        //相关技能等级
+        public int skillLevel;
+        //优先级系数
+        public int priority;
+    }
+    
     /// <summary>
     /// 单个殖民者的经济数据
     /// 负责：存储工作量 + 计算待支付工资
     /// </summary>
     public class CES_PawnEconomyData : IExposable
     {
+        
         /// <summary>
         /// 殖民者的钱包余额
         /// </summary>
@@ -21,13 +35,13 @@ namespace EconomicSystem
         public float unpaidWage;
 
         /// <summary>
-        /// 按 WorkType 分类的累计工作量
-        /// Key   : WorkTypeDef（建造 / 研究 / 清洁等）
-        /// Value : 抽象工作量（不是 tick）
+        /// 按 WorkType 分类的工作量
         /// </summary>
-        public Dictionary<WorkTypeDef, float> workValueByType =
-            new Dictionary<WorkTypeDef, float>();
-
+        public List<WorkWagePreview> workPriceByType = new List<WorkWagePreview>();
+        
+        //UI用
+        public List<WorkWagePreview> dailyWorkPreview = new List<WorkWagePreview>();
+        
         /// 殖民者的私人物品列表
         public List<PrivateItemData> privateOwnedAssets = new List<PrivateItemData>();
 
@@ -40,10 +54,9 @@ namespace EconomicSystem
         // Value: 冷却结束的 Tick 时间
         public Dictionary<string, int> coolDowns = new Dictionary<string, int>();
         
-
-        // 利息
-        // 每日回馈率 (0.005f = 0.5% 每日)
-        private const float DailyInterestRate = 0.005f;
+        
+        // 每日利息 (0.02f = 2% 每日)
+        private const float DailyInterestRate = 0.02f;
 
         // 上次计算回馈的日期（以游戏天数计算）
         private int lastInterestDay = 0;
@@ -54,13 +67,8 @@ namespace EconomicSystem
         {
             Scribe_Values.Look(ref virtualWallet, "virtualWallet", 0f);
             Scribe_Values.Look(ref unpaidWage, "unpaidWage", 0f);
-            Scribe_Collections.Look(
-
-                ref workValueByType,
-                "workValueByType",
-                LookMode.Def,
-                LookMode.Value
-            );
+            
+            
             // ⭐ 更改存档逻辑以使用新的 PrivateItemData 列表
             Scribe_Collections.Look(
                 ref privateOwnedAssets,
@@ -150,7 +158,7 @@ namespace EconomicSystem
         /// </summary>
         public void ClearPendingWork()
         {
-            workValueByType.Clear();
+            workPriceByType.Clear();
         }
 
         #endregion
@@ -161,104 +169,79 @@ namespace EconomicSystem
         /// 计算当前待支付工资（不取整）
         /// 由 WageProcessor 决定是否发放
         /// </summary>
-        public float CalculatePendingWage()
+        /// <param name="previews"></param>
+        public float CalculatePendingWage(List<WorkWagePreview> previews)
         {
             float totalWage = 0f;
 
-            foreach (var pair in workValueByType)
+            foreach (var pair in previews)
             {
-                WorkTypeDef workType = pair.Key;
-                float workAmount = pair.Value;
-
-                if (workAmount <= 0f || workType == null)
+                //计算单个工作的工资
+                float workPrice = pair.basePrice *
+                                  WageUtility.GetSkillFactor(pair.skillLevel).Item2*
+                                  WageUtility.GetPriorityMultiplier(pair.priority);
+                
+                if (workPrice <= 0f || pair.workType == null)
                     continue;
 
-                // 获取该工作类型的工资系数
-                float wageFactor = GetWageFactor(workType);
-
-                totalWage += workAmount * wageFactor;
+                totalWage +=workPrice*CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
             }
-
-            return totalWage*CES_EconomyUtility.GetCorrection(Find.AnyPlayerHomeMap);
+            //总工资*工资系数补正
+            return totalWage;
         }
+
+        ///  <summary>
+        /// 得到某个工作的工资(包含工资系数)
+        ///  </summary>
+        ///  <param name="workType"></param>
+        ///  <param name="previews"></param>
+        ///  <returns></returns>
+        public float GetWage(WorkTypeDef workType,List<WorkWagePreview> previews)
+        {
+            foreach (var pair in previews)
+            {
+                if (pair.workType == workType)
+                {
+                    float workPrice = pair.basePrice *
+                                      WageUtility.GetSkillFactor(pair.skillLevel).Item2*
+                                      WageUtility.GetPriorityMultiplier(pair.priority);
+                    return workPrice;
+                }
+            }
+            Log.Warning($"没有找到{workType}工作");
+            return 0f;
+            
+        }
+
+        
 
         /// <summary>
-        /// 得到单个工作类型的工作价值（工资）
+        /// 添加工作
         /// </summary>
-        /// <param name="workType">工作类型</param>
-        /// <returns>计算后的工资</returns>
-        public float GetWageByWorkType(WorkTypeDef workType)
+        public void AddWork(WorkTypeDef workType, int basePrice, int skillLevel, int priority)
         {
-            if (!workValueByType.ContainsKey(workType) || workValueByType[workType] < 0f)
-                return 0f;
-            return workValueByType[workType] * GetWageFactor(workType);
-        }
-
-        /// <summary>
-        /// 根据 WorkType 返回工资系数
-        /// ⚠ MVP 版本：硬编码
-        /// 以后可以替换为 Def / ModSetting
-        /// </summary>
-        private float GetWageFactor(WorkTypeDef workType)
-        {
-            // 示例规则（你可以随时改）
-            //研究价值
-            if (workType == WorkTypeDefOf.Research)
-                return 1.2f;
-
-            //建造价值
-            if (workType == WorkTypeDefOf.Construction)
-                return 0.5f;
-
-            //采矿价值
-            if (workType == WorkTypeDefOf.Mining)
-                return 0.5f;
-
-            //清洁价值
-            if (workType == WorkTypeDefOf.Cleaning)
-                return 0.2f;
-
-            //狩猎价值
-            if (workType == WorkTypeDefOf.Hauling)
-                return 1.2f;
-
-            //监管价值
-            if (workType == WorkTypeDefOf.Warden)
-                return 1f;
-            //医疗价值
-            if (workType == WorkTypeDefOf.Doctor)
-                return 2f;
-            //制作/烹饪价值
-            if (workType == WorkTypeDefOf.Crafting)
-                return 0.7f;
-            //锻造价值
-            if (workType == WorkTypeDefOf.Smithing)
-                return 1f;
-            //割除价值
-            if (workType == WorkTypeDefOf.PlantCutting)
-                return 0.7f;
-            //种植价值
-            if (workType == WorkTypeDefOf.Growing)
-                return 1.3f;
-            //钓鱼价值
-            if (workType == WorkTypeDefOf.Fishing)
-                return 1.5f;
-
-            // 默认工资系数
-            return 0.3f;
-        }
-
-        public void AddWork(WorkTypeDef workType, float value)
-        {
-            if (workType == null || value <= 0f)
+            if (workType == null)
                 return;
 
-            if (!workValueByType.TryGetValue(workType, out float current))
-                current = 0f;
+            WorkWagePreview preview = new WorkWagePreview
+            {
+                workType = workType,
+                basePrice = basePrice,
+                skillLevel = skillLevel,
+                priority = priority
+            };
 
-            workValueByType[workType] = current + value;
+            // 结算用
+            workPriceByType.Add(preview);
+
+            // UI 用（如果不存在）
+            if (!dailyWorkPreview.Any(p => p.workType == workType))
+            {
+                dailyWorkPreview.Add(preview);
+            }
         }
 
+        
         /// <summary>
         /// 欠薪金额等级
         /// </summary>
