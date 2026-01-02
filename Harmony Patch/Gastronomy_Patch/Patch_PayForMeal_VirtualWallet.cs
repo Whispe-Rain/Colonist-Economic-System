@@ -59,9 +59,6 @@ namespace EconomicSystem
             if (data.virtualWallet >= requiredAmount)
             {
                 
-                
-                // 解决方案：我们手动扣除虚拟钱包，然后生成银币并放入 payTarget，模拟原始方法行为。
-                
                 // 1. 扣除虚拟钱包
                 data.virtualWallet -= requiredAmount;
 

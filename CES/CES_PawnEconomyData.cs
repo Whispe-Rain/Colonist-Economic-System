@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RimWorld;
 using Verse;
@@ -49,7 +50,7 @@ namespace EconomicSystem
         //殖民者的经济信息记录
         public List<EconomicLogEntry> economicHistory = new List<EconomicLogEntry>();
         
-        //工作冷却，防止卡死
+        //交易冷却
         // Key: 冷却行为的类型 (e.g., "TradeFail", "StealFail")
         // Value: 冷却结束的 Tick 时间
         public Dictionary<string, int> coolDowns = new Dictionary<string, int>();
@@ -320,8 +321,7 @@ namespace EconomicSystem
 
             return false;
         }
-
-        //对
+        
         public int GetProfit(int sellPrice, int buyPrice)
         {
             return sellPrice-buyPrice;
@@ -359,6 +359,23 @@ namespace EconomicSystem
             // 更新日志
             lastInterestDay = currentDay;
 
+        }
+
+        /// <summary>
+        /// 添加日志
+        /// </summary>
+        /// <param name="historys">日志合集</param>
+        /// <param name="log">要添加的日志内容</param>
+        public void AddHistory(List<EconomicLogEntry> historys,String log)
+        {
+            //如果当前日志条数超过了50条
+            if (historys.Count>=50)
+            {
+                //清空日志
+                historys.Clear();
+            }
+            //添加新日志
+            historys.Add(EconomicLogEntry.NewLog(log));
         }
     }
 }

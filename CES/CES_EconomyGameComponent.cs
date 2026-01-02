@@ -20,6 +20,9 @@ namespace EconomicSystem
             = new();
 
         public CES_EconomyGameComponent(Game game) { }
+        
+        //
+        public ThingFilter tradeThingFilter;
 
         //这是 RimWorld 存档,读档,世界初始化时自动调用的
         public override void ExposeData()
@@ -32,16 +35,30 @@ namespace EconomicSystem
                 LookMode.Value,
                 LookMode.Deep
             );
-
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 savedData ??= new Dictionary<string, CES_PawnEconomyData>();
+            }
+            
+            
+            Scribe_Deep.Look(ref tradeThingFilter, "tradeThingFilter");
+
+            if (tradeThingFilter == null)
+            {
+                tradeThingFilter = new ThingFilter();
+            }
+
+            // ⭐ 核心修复：确保 RootNode 存在
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                tradeThingFilter.SetAllowAll(null);
             }
         }
 
         public CES_PawnEconomyData GetOrCreateDataFor(Pawn pawn)
         {
-            if (pawn == null || !pawn.IsColonist)
+            //只允许殖民者，不包括奴隶和食尸鬼
+            if (pawn == null || !pawn.IsColonist|| pawn.IsSlave||pawn.IsGhoul)
                 return null;
 
             string id = pawn.GetUniqueLoadID();

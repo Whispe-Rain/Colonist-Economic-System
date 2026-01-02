@@ -41,7 +41,7 @@ namespace EconomicSystem
             data.privateOwnedAssets.Remove(asset);
 
             // 写日志
-            data.economicHistory.Add(EconomicLogEntry.NewLog($"以{price:F0}白银将{thing.LabelCap}卖给了超凡智能"));
+            data.economicHistory.Add(EconomicLogEntry.NewLog($"以{price:F0}白银将{thing.LabelCap}卖给了玩家"));
             
 
             SoundDefOf.ExecuteTrade.PlayOneShotOnCamera();

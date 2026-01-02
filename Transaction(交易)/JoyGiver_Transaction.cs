@@ -13,9 +13,6 @@ namespace EconomicSystem
     {
         // 交易的最远距离，防止追逐太远
         private const float MaxTradeDistance = 40f;
-        //冷却时间
-        private const int CooldownTicks = 240;
-        private static readonly Dictionary<Pawn, int> lastTryTick = new();
         
         //决定了Pawn执行交易行为的概率
         public override float GetChance(Pawn pawn)
@@ -53,15 +50,7 @@ namespace EconomicSystem
         
         public override Job TryGiveJob(Pawn pawn)
         {
-            //冷却
-            int now = Find.TickManager.TicksGame;
-
-            if (lastTryTick.TryGetValue(pawn, out int last))
-            {
-                if (now - last < CooldownTicks)
-                    return null;
-            }
-            lastTryTick[pawn] = now;
+           
             
             CES_PawnEconomyData data=pawn.GetEconomyData();
             //得到全部殖民者
@@ -75,6 +64,16 @@ namespace EconomicSystem
             //1.确认代售商品
             PrivateItemData GoodsData= data.privateOwnedAssets[Random.Range(0, data.privateOwnedAssets.Count)];
             Thing Goods = GoodsData.RecreateThing();
+            
+            
+            string cdKey = $"Trade:{GoodsData.defName}";
+            int now = Find.TickManager.TicksGame;
+            // 该物品的交易是否在CD 中？
+            if (data.coolDowns.TryGetValue(cdKey, out int untilTick))
+            {
+                if (now < untilTick)
+                    return null;
+            }
             
             // --- 日志 1: 尝试触发 Job ---
             //Log.Message($"[CES_DEBUG] {pawn.NameShortColored} 正在尝试进行交易...");

@@ -53,7 +53,7 @@ namespace EconomicSystem
             get
             {
                 Pawn pawn = this.Pawn;
-                return pawn != null && pawn.IsColonist && !pawn.Dead;
+                return pawn != null && pawn.IsColonist && !pawn.Dead&&!pawn.IsSlave&&!pawn.IsGhoul;
             }
         }
 
@@ -97,17 +97,17 @@ namespace EconomicSystem
             DrawEconomicLogPanel(centerRect, pawn, data); // ⭐ 中间是 Log
             DrawVirtualAssetPanel(rightRect, pawn, data); // ⭐ 右侧是资产
         }
-
         /// <summary>
         /// 绘制左侧面板：钱包、欠薪和工资构成
         /// </summary>
         private void DrawEconomicPanel(Rect rect, Pawn pawn, CES_PawnEconomyData data)
         {
+            
             float lineHeight = 28f;
             float lineWidth = 100f;
             float curY = rect.yMin;
             float curX = rect.xMin;
-
+            
             // ===== 标题 =====
             Widgets.Label(rect.TopPartPixels(lineHeight), "经济");
             curY += lineHeight + 10f;
@@ -396,7 +396,8 @@ namespace EconomicSystem
                 TooltipHandler.TipRegion(fullRowRect, () => tempThing.DescriptionDetailed, assetData.GetHashCode());
                 TooltipHandler.TipRegion(
                     priceRect,
-                    $"{changeStr}:{priceChange*100:F0}%"
+                    $"{changeStr}:{priceChange*100:F0}%|{assetData.RecreateThing().MarketValue*assetData.stackCount*priceChange:F0}￥"
+                        .Colorize(priceChange<0?Color.green:Color.red)
                 );
                 tempThing.Destroy();
                 // drawY 已经在 DrawBoxedRowBackground 中递增，不需要再手动增加
@@ -418,7 +419,6 @@ namespace EconomicSystem
         /// </summary>
         private void DrawEconomicLogPanel(Rect rect, Pawn pawn, CES_PawnEconomyData data)
         {
-            // ... (标题和 ScrollRect 准备部分不变) ...
 
             const float Padding = 5f;
             const float TitleHeight = 20f;
@@ -446,7 +446,7 @@ namespace EconomicSystem
             var history = data.economicHistory
                 .Take(50)
                 .ToList();
-
+            
             if (!history.Any())
             {
                 Widgets.Label(scrollRect.ContractedBy(Padding), "今日无个人经济活动记录。");

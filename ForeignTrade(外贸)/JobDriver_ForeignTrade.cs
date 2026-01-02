@@ -220,9 +220,15 @@ namespace EconomicSystem
 
                             MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, feedbackText, Color.cyan, 3.5f);
 
-                            pawn.GetEconomyData().economicHistory.Add(
-                                EconomicLogEntry.NewLog(
-                                    $"与{TraderPawn.NameShortColored}以物易物，换取了{defToInject.label.Colorize(Color.cyan)} x{count}，找零{remainder}白银"));
+                            string history =
+                                $"与{TraderPawn.NameShortColored}以物易物，换取了{defToInject.label.Colorize(Color.cyan)} x{count}，找零{remainder}白银";
+                            data.AddHistory(data.economicHistory, history);
+                            
+                            //为成功交易的物品设置冷却CD，防止刚到手就卖掉。
+                            string cdKey = $"ForeignTrade:{itemData.defName}";
+                            int now = Find.TickManager.TicksGame;
+
+                            data.coolDowns[cdKey] = now + 600; // 600 ticks = 10 秒
                         }
                         else
                         {
@@ -232,8 +238,8 @@ namespace EconomicSystem
                             MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "BarterFailed_ToSilver".Translate(),
                                 Color.yellow, 3f);
 
-                            pawn.GetEconomyData().economicHistory.Add(
-                                EconomicLogEntry.NewLog($"与{TraderPawn.NameShortColored}以物易物失败，转为白银交易+{salePrice}。"));
+                            string history = $"与{TraderPawn.NameShortColored}以物易物失败，转为白银交易+{salePrice}。";
+                            data.AddHistory(data.economicHistory, history);
                         }
                     }
                 }
@@ -246,16 +252,18 @@ namespace EconomicSystem
                 if (profit > 0)
                 {
                     //盈利售卖日志
-                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                        $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
-                        $",净利润{profit.ToString().Colorize(Color.green)}"));
+                    string history = $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                                     $",净利润{profit.ToString().Colorize(Color.green)}";
+                    data.AddHistory(data.economicHistory, history);
+                    
+                   
                 }
                 else
                 {
                     //亏损售卖日志
-                    pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                        $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
-                        $",净利润{profit.ToString().Colorize(Color.red)}"));
+                    string history = $"将{itemData.Name.Colorize(Color.yellow)}出售给{TraderPawn.NameShortColored}" +
+                                     $",净利润{profit.ToString().Colorize(Color.red)}";
+                    data.AddHistory(data.economicHistory, history);
                 }
 
                 // B. 增加虚拟货币

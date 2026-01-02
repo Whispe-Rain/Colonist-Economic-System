@@ -7,25 +7,11 @@ namespace EconomicSystem
 {
     public class JobGiver_ForeignTrade:ThinkNode_JobGiver
     {
-        //冷却时间
-        private const int CooldownTicks = 600;
-        private static readonly Dictionary<Pawn, int> lastTryTick = new();
+       
         // 交易的最远距离，防止追逐太远
         private const float MaxTradeDistance = 40f; 
-        
-        
         protected override Job TryGiveJob(Pawn pawn)
         {
-            //冷却
-            int now = Find.TickManager.TicksGame;
-
-            if (lastTryTick.TryGetValue(pawn, out int last))
-            {
-                if (now - last < CooldownTicks)
-                    return null;
-            }
-            lastTryTick[pawn] = now;
-            
             //获得地图上所有可以交易的成员
             List<Pawn> viableTraders= pawn.Map.mapPawns.AllPawns
                 .Where(p => ForeignTradeUtility.IsViableTrader(pawn, p)) // 预先筛选
@@ -46,11 +32,24 @@ namespace EconomicSystem
                 return null;
             }
 
+            
+            //交易的物品是否为空
             PrivateItemData itemToSell =ForeignTradeUtility.GetRandomItemToSell(data.privateOwnedAssets);
             if (itemToSell == null)
             {
                 return null;
             }
+            
+            
+            string cdKey = $"ForeignTrade:{itemToSell.defName}";
+            int now = Find.TickManager.TicksGame;
+            // 该物品的交易是否在CD 中？
+            if (data.coolDowns.TryGetValue(cdKey, out int untilTick))
+            {
+                if (now < untilTick)
+                    return null;
+            }
+            
 
             // 2. 检查 Trader 是否有效 (使用您原来的方法)
             if (!ForeignTradeUtility.IsViableTrader(pawn, targetTrader)) // <-- 调用新的辅助方法
@@ -63,6 +62,10 @@ namespace EconomicSystem
             {
                 return null;
             }
+            
+            //防止追逐太远
+            if ((pawn.Position - targetTrader.Position).LengthHorizontalSquared > MaxTradeDistance * MaxTradeDistance)
+                return null;
             
             // 4. 创建 Job
             Job job = JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("CES_ForeignTrade"), targetTrader);

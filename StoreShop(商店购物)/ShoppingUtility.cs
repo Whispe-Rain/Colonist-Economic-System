@@ -20,6 +20,14 @@ namespace EconomicSystem
                 return new List<Thing>();
 
             Map map = pawn.Map;
+            
+            
+            // 🔑 获取经济组件（唯一正确方式）
+            var economy = Current.Game.GetComponent<CES_EconomyGameComponent>();
+            ThingFilter tradeFilter = economy?.tradeThingFilter;
+
+            if (tradeFilter == null)
+                return new List<Thing>();
 
             //得到购物区
             var buyArea = map.areaManager.AllAreas.OfType<Area_Buy>().FirstOrDefault();
@@ -82,50 +90,47 @@ namespace EconomicSystem
                     allItems.Add(thing);
                 }
             }
-
-            Log.Warning("初步筛选："+allItems.Count);
-            // 3. 过滤满足条件的物品
+            
             IEnumerable<Thing> filteredItems = allItems.Where(t =>
             {
-                // === 致命防御：MinifiedThing ===
-                if (t is MinifiedThing minified)
-                {
-                    // inner 为空 → 直接丢弃
-                    if (minified.InnerThing == null)
-                        return false;
-
-                    // 即使 inner 不为空，也不允许交易
+                // 0️⃣ 玩家交易筛选器
+                if (!tradeFilter.Allows(t.def))
                     return false;
-                }
 
-                
-                // 例如：必须是 Item
+                // 1️⃣ MinifiedThing 防御（你之前踩过雷）
+                if (t is MinifiedThing)
+                    return false;
+
+                // 2️⃣ 必须是 Item
                 if (t.def.category != ThingCategory.Item)
                     return false;
-                
-                // 基本检查
-                if (t.MarketValue <= 0f || t.IsForbidden(pawn) || t.IsBurning() || t.def.tradeability == Tradeability.None)
+
+                // 3️⃣ 市场与交易性
+                if (t.MarketValue <= 0f ||
+                    t.def.tradeability == Tradeability.None)
                     return false;
 
-                // 交易许可检查
-                if (!CES_EconomyUtility.IsPurchaseAllowed(t.def, map, 1))
+                // 4️⃣ 状态检查
+                if (t.IsForbidden(pawn) || t.IsBurning())
                     return false;
 
-                // 排除被装备的物品
+                // 6️⃣ 排除装备中物品
                 if (t.ParentHolder is Pawn)
                     return false;
-                
-                // ✅ 只有【已 Spawn 的地面物品】才做 CanReach
-                if (t.Spawned)
-                {
-                    if (!pawn.CanReach(t, PathEndMode.ClosestTouch, Danger.Some))
-                        return false;
-                }
-                
+
+                // 7️⃣ 最低价值门槛
+                if (t.MarketValue < 1f)
+                    return false;
+
+                // 8️⃣ 可达性（只对 Spawned）
+                if (t.Spawned && !pawn.CanReach(t, PathEndMode.ClosestTouch, Danger.Some))
+                    return false;
+                //兜底
+                if (t.def.IsStuff || t.def.building?.isResourceRock == true)
+                    return false;
+
                 return true;
             });
-            Log.Warning("最终："+filteredItems.ToList().Count);
-            // 返回随机打乱的列表
             return filteredItems.ToList().InRandomOrder().ToList();
         }
     }

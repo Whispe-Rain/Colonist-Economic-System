@@ -31,7 +31,7 @@ namespace EconomicSystem
         
         //返回商品的售价（只用于玩家购买）
         public int Price=>(int)(this.RecreateThing().MarketValue
-                                +this.RecreateThing().MarketValue*priceChange);
+                                +this.RecreateThing().MarketValue*priceChange)*stackCount;
         
 
         // 从现有 Thing 实例化的构造函数

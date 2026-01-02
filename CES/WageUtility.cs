@@ -58,8 +58,8 @@ namespace EconomicSystem
             //保育价值
             if (workType == WorkTypeDefOf.Childcare)
                 return 8;
-            //灭火价值，义务劳动。
-            if (workType == WorkTypeDefOf.Firefighter)
+            //不需要技能要求的工作，不支付工资。
+            if (workType.relevantSkills.Count==0)
                 return 0;
 
             // 其他工资系数，包括MOD添加的

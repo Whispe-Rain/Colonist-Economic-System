@@ -46,16 +46,20 @@ namespace EconomicSystem
             // ===== 4. 所有殖民者是否都在睡觉 =====
             foreach (Pawn other in pawn.Map.mapPawns.FreeColonists)
             {
+                //记录当前有多少人没睡觉
+                int pawnAwke = 0;
+                
                 if (other == pawn)
                     continue;
-
-                // 任何一个醒着的殖民者 → 不偷
-                if (other.Awake())
+                
+                if (other.Awake()||other!=pawn)
+                {
+                    pawnAwke += 1;
+                }
+                // 有三个醒着的殖民者（危险） → 不偷
+                if (pawnAwke>3)
                     return false;
             }
-            
-            
-            
             return true;
             
            

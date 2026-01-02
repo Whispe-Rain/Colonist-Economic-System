@@ -211,16 +211,18 @@ namespace EconomicSystem
             if (profit>0)
             {
                 //盈利售卖日志
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}卖给{targetPawn.NameShortColored}" +
-                    $",利润+{profit.ToString().Colorize(Color.green)}"));
+                string history = $"将{itemData.Name.Colorize(Color.yellow)}卖给{targetPawn.NameShortColored}" +
+                                 $",赚取+{profit.ToString().Colorize(Color.green)}";
+                data.AddHistory(pawn.GetEconomyData().economicHistory,history);
+                
+               
             }
             else
             {
                 //亏损售卖日志
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"将{itemData.Name.Colorize(Color.yellow)}麦给{targetPawn.NameShortColored}" +
-                    $",利润{profit.ToString().Colorize(Color.red)}"));
+                string history2 =  $"将{itemData.Name.Colorize(Color.yellow)}麦给{targetPawn.NameShortColored}" +
+                                   $",亏损{profit.ToString().Colorize(Color.red)}";
+                data.AddHistory(pawn.GetEconomyData().economicHistory,history2);
             }
             
             //买家添加物品并付钱给卖家
@@ -228,14 +230,19 @@ namespace EconomicSystem
             {
                
                 //生成购买日志
-                targetPawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog(
-                    $"从{pawn.NameShortColored}花费{salePrice}白银买{itemData.Name.Colorize(Color.yellow)}"));
+                string history3 =  $"从{pawn.NameShortColored}花费{salePrice}白银买{itemData.Name.Colorize(Color.yellow)}";
+                targetPawn.GetEconomyData().AddHistory(targetPawn.GetEconomyData().economicHistory,history3);
                 
                 // B. 增加虚拟货币
                 targetPawn.GetEconomyData().virtualWallet -= salePrice;
                 data.AddMoney(netIncome);
                
             }
+            //为成功交易的物品设置冷却CD，防止刚到手就卖掉。
+            string cdKey = $"Trade:{itemData.defName}";
+            int now = Find.TickManager.TicksGame;
+
+            data.coolDowns[cdKey] = now + 600; // 600 ticks = 10 秒
 
             // C. 生成实体白银税收
             if (taxAmount > 0)

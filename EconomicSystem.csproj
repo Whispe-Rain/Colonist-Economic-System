@@ -94,7 +94,6 @@
         <Compile Include="Harmony Patch\HarmonyInit.cs" />
         <Compile Include="Harmony Patch\Patch_Pawn_TickRare.cs" />
         <Compile Include="Harmony Patch\Pawn_Kill_EconomicCleanup.cs" />
-        <Compile Include="Main.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="StoreShop(商店购物)\JobDriver_GoShopping.cs" />
         <Compile Include="StoreShop(商店购物)\JoyGiver_ColonistShopping.cs" />
@@ -107,9 +106,11 @@
         <Compile Include="Transaction(交易)\JobDriver_GoTrading.cs" />
         <Compile Include="Transaction(交易)\JoyGiver_Transaction.cs" />
         <Compile Include="Transaction(交易)\TransactionUtility.cs" />
-        <Compile Include="UI\ITabUtility.cs" />
-        <Compile Include="UI\ITab_Pawn_Economy.cs" />
-        <Compile Include="UI\ModInitializer.cs" />
+        <Compile Include="UI\Tab\ITabUtility.cs" />
+        <Compile Include="UI\Tab\ITab_Pawn_Economy.cs" />
+        <Compile Include="UI\Tab\ModInitializer.cs" />
+        <Compile Include="UI\Window\Dialog_TradeThingFilter.cs" />
+        <Compile Include="UI\Window\MainButtonWorker_Economy.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

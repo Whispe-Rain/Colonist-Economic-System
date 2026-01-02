@@ -39,15 +39,15 @@ namespace EconomicSystem
 
             // 4. 计算概率
     
-            //基础购物概率2%
-            float baseShoppingChance = 30f; 
+            //基础购物概率
+            float baseShoppingChance = 25f; 
     
             // 假设：在 15银时因子为 0.5，在 5000银时因子为 2.0 (您可以根据需要调整最大/最小影响)
             // Mathf.InverseLerp(min, max, value) 返回 0.0 到 1.0 之间的值
             float walletScale = Mathf.InverseLerp(50f, 2000f, econ.virtualWallet); 
     
             // 将 0~1 的 walletScale 映射到 0.5~2.0 的因子范围 (线性映射)
-            float walletFactor = 0.5f + walletScale * 2f; 
+            float walletFactor = 0.5f + walletScale * 1.5f; 
     
             // 最终概率
             float finalChance = baseShoppingChance * walletFactor;

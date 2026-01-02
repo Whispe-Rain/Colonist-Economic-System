@@ -111,7 +111,7 @@ namespace EconomicSystem
                 int basePrice = WageUtility.GetBaseWage(workType);
                 int priority = workSettings.GetPriority(workType);
 
-                //只统计优先级1,2的工作,其他忽略。
+                //只统计优先级1,2,3的工作,其他忽略。
                 if (priority>2)
                 {
                     continue;

@@ -202,8 +202,9 @@ namespace EconomicSystem
                 Thing silver = ThingMaker.MakeThing(ThingDefOf.Silver);
                 silver.stackCount = totalPrice;
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
-                
-                pawn.GetEconomyData().economicHistory.Add(EconomicLogEntry.NewLog($"花费{totalPrice}购买{TargetItem.LabelCap.Colorize(Color.cyan)}"));
+
+                string history = $"花费{totalPrice}购买{TargetItem.LabelCap.Colorize(Color.cyan)}";
+                pawn.GetEconomyData().AddHistory(pawn.GetEconomyData().economicHistory,history);
                 
                 Messages.Message(
                     $"{pawn.LabelShort}购买了{TargetItem.LabelCap}：".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
