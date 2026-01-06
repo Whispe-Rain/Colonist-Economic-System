@@ -26,7 +26,6 @@ namespace EconomicSystem
 
             // ⭐ 关键修复 2：构建 RootNode（必须）
             this.filter.ResolveReferences();
-
             doCloseX = true;
             draggable = true;
             absorbInputAroundWindow = true;

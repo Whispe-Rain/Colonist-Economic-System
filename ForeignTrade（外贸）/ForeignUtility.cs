@@ -6,7 +6,7 @@ using Verse;
 
 namespace EconomicSystem
 {
-    public class ForeignTradeUtility
+    public class ForeignUtility
     {
         private static List<ThingDef> cachedInjectableDefs;
         
@@ -63,11 +63,11 @@ namespace EconomicSystem
         
     
         /// <summary>
-        /// 得到等价白银的随机商品
+        /// 得到等价白银的所有随机商品
         /// </summary>
         /// <param name="maxValue">最大价值</param>
         /// <returns>包含随机物品的列表</returns>
-        public static ThingDef GetRandomInjectableThingDef(int maxValue)
+        public static List<ThingDef> GetRandomInThingsDef(int maxValue)
         {
             // 首次调用时缓存所有合适的 ThingDef
             if (cachedInjectableDefs == null)
@@ -87,11 +87,12 @@ namespace EconomicSystem
         
             if (viableDefs.Any())
             {
-                return viableDefs.RandomElement();
+                return viableDefs;
             }
         
             // 如果找不到合适的，返回 null
             return null; 
         }
+        
     }
 }

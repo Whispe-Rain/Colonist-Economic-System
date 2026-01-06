@@ -41,11 +41,10 @@ namespace EconomicSystem
             //##核心代码,适合用来处理任何Job中断后的处理（优先级很高）##   
             this.AddFinishAction(OnJobFinished);
             
-            // 失败条件: 如果Pawn死亡或离开地图,或者Pawn正在睡觉
+            // 失败条件: 如果Pawn死亡或离开地图
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOnDowned(TargetIndex.A);
             this.FailOn(() => this.pawn.Drafted);
-            this.FailOn(() => TargetA.Thing is Pawn p && !p.Awake());
 
             // --- Toil 1: 前往目标客户（Goto） ---
             // 路径搜索模式为 Touch，意味着Pawn需要走到紧贴目标Pawn的位置
@@ -174,7 +173,7 @@ namespace EconomicSystem
             if (Rand.Chance(0.30f)) // 30% 概率被殖民者拒绝购买
             {
                 //recreatedThing.Destroy(); // 销毁临时 Thing
-                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "TradeFailed".Translate(), Color.red, 3f);
+                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "交易失败".Translate(), Color.red, 4f);
                 
                 return ;
             }
@@ -202,9 +201,7 @@ namespace EconomicSystem
             // 5. 执行结算操作
             // A. 移除虚拟物品
             data.RemoveAsset(itemData,netIncome);
-
-            Log.Message("sellPrice:"+itemData.sellPrice);
-            Log.Message("buyPrice:"+itemData.buyPrice);
+            
             //计算利润并记录
             int profit= data.GetProfit(itemData.sellPrice,itemData.buyPrice);
             data.Profit+=profit;
@@ -242,7 +239,7 @@ namespace EconomicSystem
             string cdKey = $"Trade:{itemData.defName}";
             int now = Find.TickManager.TicksGame;
 
-            data.coolDowns[cdKey] = now + 600; // 600 ticks = 10 秒
+            data.coolDowns[cdKey] = now + 60000; 
 
             // C. 生成实体白银税收
             if (taxAmount > 0)
@@ -254,14 +251,11 @@ namespace EconomicSystem
                 GenSpawn.Spawn(silverTax, pawn.Position, pawn.Map);
 
                 // 通知玩家税收已生成 (可选 Mote)
-                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Tax: {taxAmount} Silver", Color.white, 2.5f);
+                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"商品税: {taxAmount} 白银", Color.white, 4f);
             }
 
             // D. 反馈 Mote (显示总收入)
-            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"Sold: +{netIncome}", Color.green, 3f);
-
-            //Log.Message(
-                //$"[CES] {pawn.NameShortColored} sold {itemData.defName} for {salePrice}. Net: {netIncome}, Tax: {taxAmount}.");
+            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, $"售出价: +{netIncome}", Color.green, 4f);
         }
         
         private void OnJobFinished(JobCondition condition)

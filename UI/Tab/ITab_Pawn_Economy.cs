@@ -129,16 +129,24 @@ namespace EconomicSystem
             float totalWage = data.CalculatePendingWage(data.dailyWorkPreview);
             Widgets.Label(new Rect(rect.x, curY, rect.width, lineHeight),
                 $"工资:{totalWage:F0}");
-            curY += lineHeight + 16f;
-
+            curY += lineHeight;
+           
+            //第二列
+            float curY2 = rect.yMin+lineHeight + 10f;
             curX += lineWidth;
             float Profit = data.Profit;
             //如果利润为正，绿色，为负，红色
             Color color = Profit > 0 ? Color.green : Color.red;
-            Widgets.Label(new Rect(curX, rect.y, rect.width, lineHeight),
+            Widgets.Label(new Rect(curX, curY2, rect.width, lineHeight),
                 $"利润:{Profit.ToString().Colorize(color):F0)}");
-
-
+            curY2 += lineHeight;
+            
+            float Tax=(int)data.Tax;
+            Widgets.Label(new Rect(curX, curY2, rect.width, lineHeight),
+                $"财产税:{Tax:F0}");
+            curY2 += lineHeight;
+            
+            
             // --- 分隔线 ---
             Widgets.DrawLineHorizontal(rect.x, curY, rect.width);
             curY += 10f;
@@ -177,36 +185,27 @@ namespace EconomicSystem
             foreach (var p in previews)
             {
                 Rect row = new Rect(0f, drawY, viewRect.width, rowHeight);
-                //按照优先级添加边框线
-                Color outline=Color.white;
-                if (p.priority == 1)
-                    outline = new Color(1f, 1f, 0, 1f);   // 金色
-                else if (p.priority == 2)
-                    outline = new Color(1f, 1f, 1f, 1f);  // 银灰
-                // ⭐ 斑马纹背景
-                Color bg=Color.black;
-                switch (WageUtility.GetSkillFactor(p.skillLevel).Item1)
+                
+               
+                Color bg = Color.black;
+                if ( p.skillLevel<7)
                 {
-                    case "见习":
-                        bg =Color.gray;;
-                        break;
-                    case "入门":
-                        bg = Color.white;
-                        break;
-                    case "标准":
-                        bg = Color.green;
-                        break;
-                    case "熟练":
-                        bg =Color.cyan;
-                        break;
-                    case "专家":
-                        bg = Color.magenta;
-                        break;
-                    case "大师":
-                        bg =Color.yellow; 
-                        break;
+                    bg = new Color(0.9f,0.9f,0.9f,0.5f);
                 }
-                Widgets.DrawBoxSolidWithOutline(row, bg,outline);
+                if ( p.skillLevel>=7&&p.skillLevel<10)
+                {
+                    bg = new Color(0.1f,1f,0.3f,0.5f);
+                }
+                else if (p.skillLevel>=10&&p.skillLevel<15)
+                {
+                    bg = new Color(0.0f, 1f, 1f, 0.5f);
+                }
+                else if(p.skillLevel>=15)
+                {
+                    bg = new Color(1f, 0.92156863f, 0.015686275f, 0.5f);
+                }
+                
+                Widgets.DrawBoxSolidWithOutline(row, bg,Color.white);
                 
                 string label =p.workType.labelShort ?? p.workType.label;
 

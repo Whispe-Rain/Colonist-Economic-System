@@ -4,7 +4,7 @@ using Verse.AI;
 
 namespace EconomicSystem
 {
-    public class ThinkNode_TradeOpportunity:ThinkNode_Conditional
+    public class ThinkNode_ForeignSelling:ThinkNode_Conditional
     {
         protected override bool Satisfied(Pawn pawn)
         {

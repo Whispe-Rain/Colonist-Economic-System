@@ -71,8 +71,13 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="CES\WageUtility.cs" />
-        <Compile Include="ForeignTrade(外贸)\JobGiver_ForeignTrade.cs" />
-        <Compile Include="ForeignTrade(外贸)\ThinkNode_TradeOpportunity.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobDriver_ForeignSelling.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobGiver_ForeignSelling.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\ThinkNode_ForeignSelling.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignShopping（外贸-购物）\JobDriver_ForeignShopping.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignShopping（外贸-购物）\JobGiver_ForeignShopping.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignShopping（外贸-购物）\ThinkNode_ForeignShopping.cs" />
+        <Compile Include="ForeignTrade（外贸）\ForeignUtility.cs" />
         <Compile Include="Steal（偷窃）\JobDriver_GoStealing.cs" />
         <Compile Include="Steal（偷窃）\JobGiver_StealFromPawn.cs" />
         <Compile Include="Steal（偷窃）\ThinkNode_StealOpportunity.cs" />
@@ -86,8 +91,6 @@
         <Compile Include="CES\PrivateItemData.cs" />
         <Compile Include="CES\WageProcessor.cs" />
         <Compile Include="DevMode\DebugActions_CES.cs" />
-        <Compile Include="ForeignTrade(外贸)\ForeignTradeUtility.cs" />
-        <Compile Include="ForeignTrade(外贸)\JobDriver_ForeignTrade.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistCanAffordMeal.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_ColonistHasToPay.cs" />
         <Compile Include="Harmony Patch\Gastronomy_Patch\Patch_PayForMeal_VirtualWallet.cs" />

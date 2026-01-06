@@ -88,27 +88,4 @@ namespace EconomicSystem
             }
         }
     }
-    /// <summary>
-    /// 触发殖民者利息计算
-    /// </summary>
-    [HarmonyPatch(typeof(Pawn), "TickRare")]
-    public static class Pawn_TickRare_InterestPatch
-    {
-        public static void Postfix(Pawn __instance)
-        {
-            // 只对玩家控制的殖民者和在地图上的 Pawn 生效
-            // 使用 TickRare (每 250 刻度) 来减少性能开销，并在每天检查一次
-            if (__instance.IsColonistPlayerControlled && __instance.Map != null)
-            {
-                // 获取经济数据
-                var econ = __instance.GetEconomyData();
-                if (econ != null)
-                {
-                    // 尝试应用每日利息/回馈
-                    econ.TryApplyDailyInterest();
-                }
-            }
-        }
-    }
-    
 }

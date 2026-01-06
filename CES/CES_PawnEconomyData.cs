@@ -54,20 +54,21 @@ namespace EconomicSystem
         // Key: 冷却行为的类型 (e.g., "TradeFail", "StealFail")
         // Value: 冷却结束的 Tick 时间
         public Dictionary<string, int> coolDowns = new Dictionary<string, int>();
-        
-        
-        // 每日利息 (0.02f = 2% 每日)
-        private const float DailyInterestRate = 0.02f;
 
-        // 上次计算回馈的日期（以游戏天数计算）
-        private int lastInterestDay = 0;
+        //个人所得税
+        public float Tax;
+        
+        //外贸购物CD
+        public int ForeignShoppingTick;
+        
+        
 
         #region 存档
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref virtualWallet, "virtualWallet", 0f);
-            Scribe_Values.Look(ref unpaidWage, "unpaidWage", 0f);
+            Scribe_Values.Look(ref unpaidWage, "unpaidWage", 0);
             
             
             // ⭐ 更改存档逻辑以使用新的 PrivateItemData 列表
@@ -76,8 +77,7 @@ namespace EconomicSystem
                 "privateOwnedAssets",
                 LookMode.Deep // 必须使用 Deep 模式来存档复杂对象
             );
-
-            Scribe_Values.Look(ref lastInterestDay, "lastInterestDay", 0);
+            
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -109,6 +109,9 @@ namespace EconomicSystem
             }
             
             Scribe_Values.Look(ref Profit, "Profit", 0);
+            //初始值为钱包的5%
+            Scribe_Values.Look(ref Tax, "Tax", virtualWallet*0.05f);
+            Scribe_Values.Look(ref ForeignShoppingTick, "ForeignShoppingTick", 0);
         }
 
         #endregion
@@ -171,7 +174,7 @@ namespace EconomicSystem
         /// 由 WageProcessor 决定是否发放
         /// </summary>
         /// <param name="previews"></param>
-        public float CalculatePendingWage(List<WorkWagePreview> previews)
+        public float CalculatePendingWage(List<WorkWagePreview> previews)  
         {
             float totalWage = 0f;
 
@@ -280,8 +283,7 @@ namespace EconomicSystem
             //保存数量
             asset.stackCount = count;
             
-            // 2. 添加到列表
-            privateOwnedAssets.Add(asset);
+            
 
             // 3. 核心：从世界中移除物理物品
             if (item.Spawned)
@@ -293,9 +295,19 @@ namespace EconomicSystem
                 // 从库存/容器中移除 (例如，如果 itemToTransfer 是 SplitOff 得到的临时对象)
                 item.holdingOwner.Remove(item);
             }
-
-            Log.Message(
-                $"[CES_ASSET] Virtualized and destroyed item {item.LabelCap} (Count: {item.stackCount}). Total assets: {privateOwnedAssets.Count}.");
+            
+            //如果已经存在该物品，只增加数量
+            foreach (var itemData in privateOwnedAssets)
+            {
+                if (itemData.defName==item.def.defName)
+                {
+                    itemData.stackCount+=asset.stackCount;
+                    return;
+                }
+               
+            }
+            // 2. 添加到列表
+            privateOwnedAssets.Add(asset);
         }
 
         // 示例：从私有资产中移除一个项目 (用于出售或使用)
@@ -303,7 +315,7 @@ namespace EconomicSystem
         {
             //记录售出价
             asset.sellPrice=sellPrice;
-            Log.Message(asset.Name + "售出价:" + sellPrice);
+            
             return privateOwnedAssets.Remove(asset);
         }
 
@@ -312,8 +324,20 @@ namespace EconomicSystem
             int i = privateOwnedAssets.Count;
             //记录买入价格
             asset.buyPrice=buyPrice;
-            Log.Message(asset.Name + "购买价:" + buyPrice);
+
+            //遍历列表，查找是否有同一个名字的物品
+            foreach (var itemData in privateOwnedAssets)
+            {
+                //有同名物品
+                if (itemData.defName==asset.defName)
+                {
+                    //不创建新物品,直接增加数量。
+                    itemData.stackCount+=asset.stackCount;
+                    return true;
+                }
+            }
             this.privateOwnedAssets.Add(asset);
+            
             if (privateOwnedAssets.Count > i)
             {
                 return true;
@@ -328,39 +352,7 @@ namespace EconomicSystem
         }
 
         #endregion
-
-        /// <summary>
-        /// 检查并应用每日利息，将虚拟资金注入钱包。
-        /// </summary>
-        public void TryApplyDailyInterest()
-        {
-            // RimWorld 时间单位：60000 ticks = 1 Day
-            int currentDay = GenTicks.TicksAbs / 60000;
-
-            // 检查是否在同一天重复计算
-            if (currentDay <= lastInterestDay)
-            {
-                return;
-            }
-
-            // 只有当钱包余额大于 50 银时才计算回馈，鼓励储蓄
-            if (virtualWallet < 50f)
-            {
-                lastInterestDay = currentDay;
-                return;
-            }
-
-            // 计算回馈金额（这是凭空产生的虚拟货币）
-            float interestAmount = virtualWallet * DailyInterestRate;
-
-            // 利息/回馈入账
-            virtualWallet += interestAmount;
-
-            // 更新日志
-            lastInterestDay = currentDay;
-
-        }
-
+        
         /// <summary>
         /// 添加日志
         /// </summary>

@@ -82,7 +82,11 @@ namespace EconomicSystem
             List<Pawn> customers=new List<Pawn>();
             foreach (Pawn customer in allCustomer)
             {
-                
+                //忽略睡觉的客户
+                if (!customer.Awake())
+                {
+                    continue;
+                }
                 // 1. 检查是否可以预定
                 if (!pawn.CanReserve(customer, 1, -1))
                 {

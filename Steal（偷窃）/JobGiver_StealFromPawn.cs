@@ -52,6 +52,12 @@ namespace EconomicSystem
             foreach (Pawn victim in victimsCopy)
             {
                 if (victim == null) continue;
+                
+                //睡眠检测
+                if (victim.Awake())
+                {
+                   continue;
+                }
 
                 // 身份与状态检查
                 if (victim.Dead || !victim.IsColonist || victim.IsPrisoner || victim.Awake())

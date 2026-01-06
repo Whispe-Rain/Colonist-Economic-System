@@ -17,6 +17,9 @@ namespace EconomicSystem
         private const int TicksToPay = 90;
 
         private Thing TargetItem => TargetA.Thing;
+
+        //目标个数
+        private int randomCount = 0;
         
         
         public override bool TryMakePreToilReservations(bool errorOnFailed)
@@ -182,10 +185,13 @@ namespace EconomicSystem
                     return;
                 }
                 
-                //得到当前售价
-                int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue * TargetItem.stackCount);
-                float preWallet = econ.virtualWallet;
+                //得到当前售价(随机购买数量)
+                randomCount=Rand.Range(1, TargetItem.stackCount+1);
+                //为了保持平衡，用市场价的80%统一售价
+                int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue*0.8f *randomCount);
                 
+                
+                Log.Warning("randomCount:" + randomCount+"totalPrice:"+totalPrice);
                 if (econ.virtualWallet < totalPrice)
                 {
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
@@ -203,11 +209,11 @@ namespace EconomicSystem
                 silver.stackCount = totalPrice;
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
 
-                string history = $"花费{totalPrice}购买{TargetItem.LabelCap.Colorize(Color.cyan)}";
+                string history = $"花费{totalPrice}白银购买{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}";
                 pawn.GetEconomyData().AddHistory(pawn.GetEconomyData().economicHistory,history);
                 
                 Messages.Message(
-                    $"{pawn.LabelShort}购买了{TargetItem.LabelCap}：".Translate(pawn.NameShortColored, totalPrice, TargetItem.LabelCapNoCount), pawn,
+                    $"{pawn.LabelShort}购买了{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}：".Translate(pawn.NameShortColored, totalPrice, randomCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);
             };
 
@@ -235,11 +241,11 @@ namespace EconomicSystem
 
                 try
                 {
-                    // 确保我们操作的是一个独立的 Thing 实例，并且数量是整个堆叠
-                    Thing itemToVirtualize = item.SplitOff(item.stackCount);
-
-                    // 核心：调用新的虚拟化方法，保存数据并销毁物理物品
-                    pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, TargetItem.stackCount);
+                    // 从目标物体堆叠中分裂出我们需要的个数
+                    Thing itemToVirtualize = item.SplitOff(randomCount);
+                    
+                    // 核心：调用虚拟化方法，保存数据并销毁物理物品
+                    pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, randomCount);
                     
                    
                     
@@ -277,8 +283,6 @@ namespace EconomicSystem
             }
 
             bool decision = Rand.Value < baseChance * moodFactor;
-            
-
             return decision;
         }
     }

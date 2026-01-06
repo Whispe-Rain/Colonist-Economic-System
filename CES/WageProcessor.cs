@@ -25,6 +25,7 @@ namespace EconomicSystem
 
         // 上一次结算的天数
         private int lastProcessedDay = -1;
+        private int lastTaxDay = -3;
 
         //工资补正
         private float correction = 0.2f;
@@ -45,12 +46,14 @@ namespace EconomicSystem
         {
             // 当前是第几天
             int currentDay = Find.TickManager.TicksGame / TicksPerDay;
+            
+            //收税日
+            int TaxDay=Find.TickManager.TicksGame / TickTaxDay;
 
             if (currentDay == lastProcessedDay)
                 return;
-
             lastProcessedDay = currentDay;
-
+            
             try
             {
                 ProcessDailyWages();
@@ -59,6 +62,15 @@ namespace EconomicSystem
             {
                 Log.Error("[CES] 工资处理器崩溃:\n" + ex);
             }
+            
+            //每次三天结算一次个人所得税
+            if (TaxDay > lastTaxDay)
+            {
+                lastTaxDay = TaxDay; 
+                ProcessDailyTax();
+            }
+
+            
         }
 
         /// <summary>
@@ -73,14 +85,16 @@ namespace EconomicSystem
             foreach (Pawn pawn in map.mapPawns.FreeColonists)
             {
                 ProcessPawnWage(pawn, economy);
+                
             }
         }
         /// <summary>
-        /// 处理单个 Pawn 的工资结算
+        /// 处理单个 Pawn 的工资结算(每日结算一次)
         /// </summary>
         private void ProcessPawnWage(Pawn pawn, MapComponent_ColonyEconomy economy)
         {
             var data = pawn.GetEconomyData();
+            
             if (data == null)
                 return;
             
@@ -88,10 +102,14 @@ namespace EconomicSystem
             if (workSettings == null)
                 return;
             
+            //更新税收
+            data.Tax=data.virtualWallet*0.05f;
+            
+            //先清空昨天的旧数据
+            data.workPriceByType.Clear();
+            //开始添加今天的新数据
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
-               
-                
                 // 1. 该工作是否启用
                 if (!workSettings.WorkIsActive(workType))
                     continue;
@@ -159,11 +177,42 @@ namespace EconomicSystem
             //结算工资时顺便更新殖民者所有私人物品的溢价或降价
             foreach (var item in data.privateOwnedAssets)
             {
-                item.priceChange+=Rand.Range(-0.5f, 0.5f);
+                //将价格浮动限制在合理范围内
+                item.priceChange = Rand.Range(-0.3f, 0.3f);
             }
         }
 
-        
+        private void ProcessDailyTax()
+        {
+            var economy = map.GetComponent<MapComponent_ColonyEconomy>();
+            if (economy == null)
+                return;
+
+            foreach (Pawn pawn in map.mapPawns.FreeColonists)
+            {
+                ProcessPawnTax(pawn, economy);
+            }
+        }
+
+        private void ProcessPawnTax(Pawn pawn, MapComponent_ColonyEconomy economy)
+        {
+            CES_PawnEconomyData data = pawn.GetEconomyData();
+            
+            int TaxToPay = Mathf.FloorToInt(data.Tax);
+
+            if (TaxToPay <= 0)
+                return;
+            
+            //小人扣钱
+            data.virtualWallet-=TaxToPay;
+            
+            //生成白银在小人脚下
+            Thing silver = ThingMaker.MakeThing(ThingDefOf.Silver);
+            silver.stackCount = TaxToPay;
+            GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
+            
+            Log.Warning($"{pawn.LabelShort}成功缴纳个人所得税:{data.Tax}");
+        }
     }
     
 }

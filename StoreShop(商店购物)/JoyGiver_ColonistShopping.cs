@@ -10,7 +10,7 @@ namespace EconomicSystem
 {
     public class JoyGiver_ColonistShopping : JoyGiver
     {
-        private const int CooldownTicks = 240; 
+        private const int CooldownTicks = 500; 
         private static readonly Dictionary<Pawn, int> lastTryTick = new();
         
         public override float GetChance(Pawn pawn)
@@ -33,7 +33,6 @@ namespace EconomicSystem
             List<Thing> availableItems = ShoppingUtility.FindBuyableItemsInStockpiles(pawn);
             if (!availableItems.Any())
             {
-                Log.Warning("没有可以购买的物品");
                 return 0f;
             }
 
