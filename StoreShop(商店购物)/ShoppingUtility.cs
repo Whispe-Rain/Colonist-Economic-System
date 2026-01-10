@@ -33,11 +33,9 @@ namespace EconomicSystem
             var buyArea = map.areaManager.AllAreas.OfType<Area_Buy>().FirstOrDefault();
             if (buyArea == null)
             {
-                Log.Message("未找到 Area_Buy 类型的购物区");
+                Log.Message("未找到的购物区");
                 return new List<Thing>();
             }
-
-            
             HashSet<Thing> allItems = new HashSet<Thing>();
 
             foreach (IntVec3 cell in buyArea.ActiveCells)

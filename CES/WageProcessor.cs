@@ -197,6 +197,8 @@ namespace EconomicSystem
         private void ProcessPawnTax(Pawn pawn, MapComponent_ColonyEconomy economy)
         {
             CES_PawnEconomyData data = pawn.GetEconomyData();
+            if (data==null)
+                return;
             
             int TaxToPay = Mathf.FloorToInt(data.Tax);
 

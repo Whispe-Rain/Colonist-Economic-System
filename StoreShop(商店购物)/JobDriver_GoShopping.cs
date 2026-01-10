@@ -20,8 +20,8 @@ namespace EconomicSystem
 
         //目标个数
         private int randomCount = 0;
-        
-        
+
+
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             var econ = pawn.GetEconomyData();
@@ -36,6 +36,7 @@ namespace EconomicSystem
             {
                 return true; // 预定已存在，Job可以开始
             }
+
             return false;
         }
 
@@ -44,7 +45,7 @@ namespace EconomicSystem
             // 确保 Job 的目标物品仍然有效且可达
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOn(() => !pawn.CanReach(TargetItem, PathEndMode.ClosestTouch, Danger.Some));
-            
+
             // 假设 Pawn 的 Job 目标 A 是最终要购买的商品
             Thing finalTarget = TargetItem;
 
@@ -55,8 +56,10 @@ namespace EconomicSystem
             yield return Toils_General.Do(delegate
             {
                 // 1. 获取所有 HaulableEver 物品 (广义上的可搬运物品)
-                List<Thing> allHaulableItems =
-                    pawn.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.HaulableEver));
+                //1.获取当前购物区所有课购买物品
+                List<Thing> allHaulableItems = ShoppingUtility.FindBuyableItemsInStockpiles(this.pawn);
+                //pawn.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.HaulableEver));
+
 
                 // 2. 过滤并随机抽取周围的浏览目标
                 Thing finalTarget = TargetItem;
@@ -76,7 +79,7 @@ namespace EconomicSystem
                         if (!pawn.CanReach(t, PathEndMode.ClosestTouch, Danger.Some)) return false;
                         // 额外：排除 MinifiedThing
                         if (t is MinifiedThing) return false;
-                        
+
                         return true;
                     })
                     // 随机抽取：使用 InRandomOrder() 和 Take(3) 替代 TakeRandom(3)
@@ -95,7 +98,6 @@ namespace EconomicSystem
                 {
                     job.AddQueuedTarget(TargetIndex.B, target); // 使用 AddQueuedTarget 逐个添加
                 }
-                
             });
 
             // --- 2. 循环标签 ---
@@ -116,10 +118,19 @@ namespace EconomicSystem
 
             browse.tickAction = () =>
             {
-                // 旋转：确保 Pawn 随机环顾四周
-                if (Find.TickManager.TicksGame % 60 == 0)
+                //在头顶生成一个商品的对话气泡
+                if (pawn.IsHashIntervalTick(300) &&
+                    !pawn.interactions.InteractedTooRecentlyToInteract())
                 {
-                    this.pawn.Rotation = Rot4.Random;
+                    Thing thing = pawn.CurJob.GetTarget(TargetIndex.B).Thing;
+                    if (thing?.def?.uiIcon == null) return;
+
+                    MoteMaker.MakeInteractionBubble(
+                        pawn,
+                        pawn,
+                        ThingDefOf.Mote_Speech,
+                        thing.def.uiIcon
+                    );
                 }
 
                 // Joy：继续获得购物的 Joy 增益
@@ -130,18 +141,38 @@ namespace EconomicSystem
             };
             yield return browse;
 
+
             // 7. **循环继续**
             // 如果 TargetB 队列中还有物品，跳回循环开始
             yield return Toils_Jump.JumpIf(browseLoopStart,
                 () => job.targetQueueB != null && job.targetQueueB.Count > 0);
 
-            
+
             // --- 8. 浏览结束，前往最终购买目标 A ---
             yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.ClosestTouch)
                 .FailOnSomeonePhysicallyInteracting(TargetIndex.A);
 
+            Toil sure = Toils_General.Wait(TicksToPay)
+                .FailOnDestroyedOrNull(TargetIndex.A);
+            sure.tickAction = () =>
+            {
+                //在头顶生成一个商品图标的对话气泡
+                if (pawn.IsHashIntervalTick(TicksToPay) &&
+                    !pawn.interactions.InteractedTooRecentlyToInteract())
+                {
+                    if (TargetItem?.def?.uiIcon == null) return;
+
+                    MoteMaker.MakeInteractionBubble(
+                        pawn,
+                        pawn,
+                        ThingDefOf.Mote_Speech,
+                        TargetItem.def.uiIcon
+                    );
+                }
+            };
+            yield return sure;
+
             // 9. **最终购买决策**
-            // ⭐ FIX 1：禁止在 Toil 中直接 EndCurrentJob
             yield return Toils_General.Do(delegate
             {
                 if (finalTarget == null || !ShouldBuyItem(pawn, finalTarget))
@@ -153,14 +184,13 @@ namespace EconomicSystem
             // --- 10. 支付等待
             yield return Toils_General.Wait(TicksToPay)
                 .FailOnDestroyedOrNull(TargetIndex.A)
-                .WithProgressBarToilDelay(TargetIndex.B);
+                .WithProgressBarToilDelay(TargetIndex.A);
 
             // --- 11. 支付执行
             yield return Toil_VirtualPay_Instant();
 
             // --- 12. 拿取商品
             yield return Toil_TakeItem();
-            
         }
 
         // --- Toil 辅助方法 ---
@@ -184,14 +214,14 @@ namespace EconomicSystem
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 //得到当前售价(随机购买数量)
-                randomCount=Rand.Range(1, TargetItem.stackCount+1);
+                randomCount = Rand.Range(1, TargetItem.stackCount + 1);
                 //为了保持平衡，用市场价的80%统一售价
-                int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue*0.8f *randomCount);
-                
-                
-                Log.Warning("randomCount:" + randomCount+"totalPrice:"+totalPrice);
+                int totalPrice = Mathf.CeilToInt(TargetItem.MarketValue * 0.8f * randomCount);
+
+
+                Log.Warning("randomCount:" + randomCount + "totalPrice:" + totalPrice);
                 if (econ.virtualWallet < totalPrice)
                 {
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
@@ -210,10 +240,11 @@ namespace EconomicSystem
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
 
                 string history = $"花费{totalPrice}白银购买{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}";
-                pawn.GetEconomyData().AddHistory(pawn.GetEconomyData().economicHistory,history);
-                
+                pawn.GetEconomyData().AddHistory(pawn.GetEconomyData().economicHistory, history);
+
                 Messages.Message(
-                    $"{pawn.LabelShort}购买了{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}：".Translate(pawn.NameShortColored, totalPrice, randomCount), pawn,
+                    $"{pawn.LabelShort}购买了{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}：".Translate(
+                        pawn.NameShortColored, totalPrice, randomCount), pawn,
                     MessageTypeDefOf.PositiveEvent, false);
             };
 
@@ -243,16 +274,12 @@ namespace EconomicSystem
                 {
                     // 从目标物体堆叠中分裂出我们需要的个数
                     Thing itemToVirtualize = item.SplitOff(randomCount);
-                    
+
                     // 核心：调用虚拟化方法，保存数据并销毁物理物品
                     pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, randomCount);
-                    
-                   
-                    
                 }
                 catch (Exception e)
                 {
-                    
                 }
             };
 
@@ -261,7 +288,7 @@ namespace EconomicSystem
             toil.socialMode = RandomSocialMode.Off;
             return toil;
         }
-        
+
         // --- 额外的决策逻辑 ---
         private bool ShouldBuyItem(Pawn pawn, Thing item)
         {

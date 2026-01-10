@@ -25,6 +25,7 @@ namespace EconomicSystem
         
         //记录玩家要买的物品。
         private PrivateItemData pendingBuyItem;
+        
 
         // 健壮的 Pawn 获取属性
         private Pawn Pawn
@@ -399,7 +400,6 @@ namespace EconomicSystem
                         .Colorize(priceChange<0?Color.green:Color.red)
                 );
                 tempThing.Destroy();
-                // drawY 已经在 DrawBoxedRowBackground 中递增，不需要再手动增加
             }
 
             Widgets.EndScrollView();
@@ -521,8 +521,7 @@ namespace EconomicSystem
 
             Widgets.EndScrollView();
         }
-
-        // 假设这个方法放在您的 ITab 派生类内部
+        
         private static float DrawBoxedRowBackground(
             Rect rect,
             float currentY,

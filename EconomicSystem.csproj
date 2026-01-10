@@ -112,8 +112,11 @@
         <Compile Include="UI\Tab\ITabUtility.cs" />
         <Compile Include="UI\Tab\ITab_Pawn_Economy.cs" />
         <Compile Include="UI\Tab\ModInitializer.cs" />
-        <Compile Include="UI\Window\Dialog_TradeThingFilter.cs" />
+        <Compile Include="UI\Window\Dialog_EconomyRoot.cs" />
         <Compile Include="UI\Window\MainButtonWorker_Economy.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="UI\Window\Market\" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

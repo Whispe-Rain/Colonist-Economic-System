@@ -26,6 +26,14 @@ namespace EconomicSystem
                 return;
             }
 
+            //50%概率失败
+            if ( Rand.Chance(0.50f))
+            {
+                return;
+            }
+
+           
+
             // 扣钱
             if (economy.TryConsumeSilver(price))
             {
