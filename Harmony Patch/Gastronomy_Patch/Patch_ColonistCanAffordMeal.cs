@@ -24,7 +24,7 @@ namespace EconomicSystem
             // 仅拦截我方殖民者
             if (pawn.IsColonist && pawn.Faction == Faction.OfPlayer)
             {
-                var economyData = pawn.GetEconomyData();
+                var economyData = pawn.TryGetEconomyData();
             
                 if (economyData != null)
                 {
@@ -49,8 +49,6 @@ namespace EconomicSystem
                     }
                 }
             }
-        
-            // 其他情况，执行原方法逻辑 (例如：访客或余额不足的殖民者)
             return true; 
         }
     }

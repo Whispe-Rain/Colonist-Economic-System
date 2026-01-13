@@ -24,8 +24,8 @@ namespace EconomicSystem
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
-            var econ = pawn.GetEconomyData();
-            if (econ == null)
+            var data = pawn.TryGetEconomyData();
+            if (data == null)
             {
                 return false;
             }
@@ -207,9 +207,9 @@ namespace EconomicSystem
                     return;
                 }
 
-                var econ = pawn.GetEconomyData();
+                var data = pawn.TryGetEconomyData();
 
-                if (econ == null)
+                if (data == null)
                 {
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
@@ -222,13 +222,13 @@ namespace EconomicSystem
 
 
                 Log.Warning("randomCount:" + randomCount + "totalPrice:" + totalPrice);
-                if (econ.virtualWallet < totalPrice)
+                if (data.virtualWallet < totalPrice)
                 {
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
                 }
 
-                if (!econ.SubtractMoney(totalPrice))
+                if (!data.SubtractMoney(totalPrice))
                 {
                     pawn.jobs.EndCurrentJob(JobCondition.Incompletable);
                     return;
@@ -240,7 +240,7 @@ namespace EconomicSystem
                 GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
 
                 string history = $"花费{totalPrice}白银购买{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}";
-                pawn.GetEconomyData().AddHistory(pawn.GetEconomyData().economicHistory, history);
+                pawn.TryGetEconomyData().AddHistory(pawn.TryGetEconomyData().economicHistory, history);
 
                 Messages.Message(
                     $"{pawn.LabelShort}购买了{TargetItem.LabelShort.Colorize(Color.cyan)} x{randomCount}：".Translate(
@@ -276,7 +276,7 @@ namespace EconomicSystem
                     Thing itemToVirtualize = item.SplitOff(randomCount);
 
                     // 核心：调用虚拟化方法，保存数据并销毁物理物品
-                    pawn.GetEconomyData().VirtualAndMarkAsset(itemToVirtualize, randomCount);
+                    pawn.TryGetEconomyData().VirtualAndMarkAsset(itemToVirtualize, randomCount);
                 }
                 catch (Exception e)
                 {
@@ -295,8 +295,8 @@ namespace EconomicSystem
             // (保持不变)
             float baseChance = 0.8f;
 
-            var econ = pawn.GetEconomyData();
-            float wallet = econ?.virtualWallet ?? 0f;
+            var data = pawn.TryGetEconomyData();
+            float wallet = data?.virtualWallet ?? 0f;
 
             if (wallet < 100f)
             {

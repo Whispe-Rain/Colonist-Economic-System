@@ -61,7 +61,7 @@ namespace EconomicSystem
 
 
                 // 2. 找到并从 Pawn 的私人资产中移除（防止交易中途卖掉）
-                CES_PawnEconomyData data = this.pawn.GetEconomyData();
+                CES_PawnEconomyData data = this.pawn.TryGetEconomyData();
                 PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == ItemDefName);
 
                 if (itemData == null)
@@ -113,7 +113,7 @@ namespace EconomicSystem
             yield return Toils_General.Do(delegate
             {
                 // 获取Pawn的经济数据
-                CES_PawnEconomyData data = pawn.GetEconomyData();
+                CES_PawnEconomyData data = pawn.TryGetEconomyData();
 
                 // 如果没有数据或无法找到待售物品，则失败
                 if (data == null || ItemDefName.NullOrEmpty())
@@ -155,6 +155,12 @@ namespace EconomicSystem
             {
                 recreatedThing.Destroy(); // 销毁临时 Thing
                 MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "贸易失败".Translate(), Color.red, 4f);
+                
+                //设置物品交易冷却CD，防止一直售卖同一个商品。
+                int now = Find.TickManager.TicksGame;
+                string cdKey = $"ForeignTradeFail:{itemData.defName}";
+                data.coolDowns[cdKey] = now + Rand.Range(2500,7500); 
+                
                 return;
             }
 
@@ -185,8 +191,11 @@ namespace EconomicSystem
                 // 1. 随机选择一个可注入的物品定义
                 // 我们选择一个最大价值略高于目标价值的物品，防止只选到低价值的。
                 ThingDef defToInject = ForeignUtility.GetRandomInThingsDef(salePrice * 2).RandomElement();
-                ;
-                Thing ToInject = ThingMaker.MakeThing(defToInject);
+                
+                //为该物品选择材质，如果需要的话。
+                ThingDef stuff = ForeignUtility.ChooseSafeRandomStuff(defToInject);
+                
+                Thing ToInject = ThingMaker.MakeThing(defToInject,stuff);
                 if (defToInject != null)
                 {
                     //得到该物品的市场价
@@ -226,10 +235,15 @@ namespace EconomicSystem
                                 $"与{TraderPawn.NameShortColored}以物易物，换取了{defToInject.label.Colorize(Color.cyan)} x{count}，找零{remainder}白银";
                             data.AddHistory(data.economicHistory, history);
 
-                            //为成功交易的物品设置冷却CD，防止刚到手就卖掉。
-                            string cdKey = $"ForeignTrade:{defToInject.defName}";
+                            
+                            //设置冷却CD，防止刚到手就卖给商队。
                             int now = Find.TickManager.TicksGame;
-                            data.coolDowns[cdKey] = now + 60000; // 36000 ticks = 1天
+                            string cdKey = $"ForeignTrade:{defToInject.defName}";
+                            data.coolDowns[cdKey] = now + 60000; // 60000 ticks = 1天
+                
+                            //设置冷却CD，防止刚到手就卖掉其他小人（其他小人又反向卖给商队）。
+                            string cdKey2 = $"Trade:{defToInject.defName}";
+                            data.coolDowns[cdKey2] = now + 60000; // 60000 ticks = 1天
                         }
                         else
                         {
@@ -247,6 +261,8 @@ namespace EconomicSystem
             }
             else
             {
+                
+                
                 //计算利润并记录
                 int profit = data.GetProfit(itemData.sellPrice, itemData.buyPrice);
                 data.Profit += profit;

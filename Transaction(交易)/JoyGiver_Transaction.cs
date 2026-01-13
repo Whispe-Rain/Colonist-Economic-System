@@ -23,7 +23,7 @@ namespace EconomicSystem
                 return 0f;
             }
             
-            CES_PawnEconomyData data=pawn.GetEconomyData();
+            CES_PawnEconomyData data=pawn.TryGetEconomyData();
             //检测该Pawn的私人物品中是否有可以交易的物品
             List<PrivateItemData> privateItems = data.privateOwnedAssets;
             
@@ -52,7 +52,7 @@ namespace EconomicSystem
         {
            
             
-            CES_PawnEconomyData data=pawn.GetEconomyData();
+            CES_PawnEconomyData data=pawn.TryGetEconomyData();
             //得到全部殖民者
             List<Pawn> allCustomer = TransactionUtility.FindAllTheCustomers(pawn);
             if (allCustomer == null || allCustomer.NullOrEmpty())
@@ -96,7 +96,7 @@ namespace EconomicSystem
                 float estimatedValue =
                     Goods.MarketValue * GoodsData.stackCount * 2f;
                 //客户的钱包必须要能支付的起该商品市场价2倍并且在40格范围内
-                if (customer.GetEconomyData().virtualWallet<estimatedValue||
+                if (customer.TryGetEconomyData().virtualWallet<estimatedValue||
                     !pawn.Position.InHorDistOf(customer.Position, MaxTradeDistance)
                     )
                 {

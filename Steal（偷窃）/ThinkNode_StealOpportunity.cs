@@ -30,7 +30,7 @@ namespace EconomicSystem
                 return false;
 
             // ===== 2. 钱包条件 =====
-            var econ = pawn.GetEconomyData();
+            var econ = pawn.TryGetEconomyData();
             if (econ == null)
                 return false;
 

@@ -17,9 +17,9 @@ namespace EconomicSystem
                 if (p == null || !p.IsColonist)
                     return ThoughtState.Inactive;
                 
-                var data = p.GetEconomyData(); 
+                var data = p.TryGetEconomyData(); 
 
-                if (data == null)
+                if (data == null || !data.active)
                 {
                     return ThoughtState.Inactive;
                 }

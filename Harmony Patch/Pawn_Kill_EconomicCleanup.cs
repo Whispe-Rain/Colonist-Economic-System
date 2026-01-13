@@ -38,7 +38,8 @@ namespace EconomicSystem
         // 核心清理逻辑：将虚拟资产转移为实体物品
         private static void TransferAssetsOnDeath(Pawn pawn)
         {
-            CES_PawnEconomyData data = pawn.GetEconomyData();
+            var comp = Current.Game.GetComponent<CES_EconomyGameComponent>();
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
 
             if (data == null)
             {
@@ -81,6 +82,9 @@ namespace EconomicSystem
                     data.privateOwnedAssets.Remove(itemData);
                 }
             }
+
+            //为死者彻底移除经济系统
+            comp.PurgeEconomyDataFor(pawn);
             Log.Message($"[CES] {pawn.NameShortColored} 死亡，成功掉落 {moneyToDrop} 白银和 {data.privateOwnedAssets.Count} 件私人物品。");
         }
     }

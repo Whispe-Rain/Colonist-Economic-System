@@ -14,8 +14,8 @@ namespace EconomicSystem
             
             var economy = map.GetComponent<MapComponent_ColonyEconomy>();
             
-            CES_PawnEconomyData data = pawn.GetEconomyData();
-            if (data == null)return;
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
+            if (data == null || !data.active)return;
             
             int price = asset.Price;
 

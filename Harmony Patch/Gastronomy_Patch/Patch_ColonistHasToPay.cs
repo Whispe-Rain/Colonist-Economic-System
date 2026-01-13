@@ -26,7 +26,7 @@ namespace EconomicSystem
             if (patron.IsColonist && patron.Faction == Faction.OfPlayer)
             {
                 // 我们只需要让殖民者拥有经济数据，就认为他们需要付费
-                if (patron.GetEconomyData() != null)
+                if (patron.TryGetEconomyData() != null)
                 {
                     __result = true;
                 }

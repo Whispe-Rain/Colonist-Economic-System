@@ -24,6 +24,8 @@ namespace EconomicSystem
     /// </summary>
     public class CES_PawnEconomyData : IExposable
     {
+        //经济系统是否为开启
+        public bool active = true;
         
         /// <summary>
         /// 殖民者的钱包余额
@@ -58,15 +60,14 @@ namespace EconomicSystem
         //个人所得税
         public float Tax;
         
-        //外贸购物CD
-        public int ForeignShoppingTick;
-        
-        
 
         #region 存档
 
         public void ExposeData()
         {
+            
+            Scribe_Values.Look(ref active, "active", true);
+            
             Scribe_Values.Look(ref virtualWallet, "virtualWallet", 0f);
             Scribe_Values.Look(ref unpaidWage, "unpaidWage", 0);
             
@@ -111,7 +112,6 @@ namespace EconomicSystem
             Scribe_Values.Look(ref Profit, "Profit", 0);
             //初始值为钱包的5%
             Scribe_Values.Look(ref Tax, "Tax", virtualWallet*0.05f);
-            Scribe_Values.Look(ref ForeignShoppingTick, "ForeignShoppingTick", 0);
         }
 
         #endregion
@@ -299,8 +299,14 @@ namespace EconomicSystem
             //如果已经存在该物品，只增加数量
             foreach (var itemData in privateOwnedAssets)
             {
-                if (itemData.defName==item.def.defName)
+                //材质，defname,品质,耐久度差<10的物品被视为完全相同
+                if (itemData.defName==asset.defName&&
+                    itemData.quality==asset.quality&&
+                    (itemData.hitPointsPct-asset.hitPointsPct)<10f&&
+                    itemData.stuffDefName==asset.stuffDefName
+                   )
                 {
+                    //不创建新物品,直接增加数量。
                     itemData.stackCount+=asset.stackCount;
                     return;
                 }
@@ -325,11 +331,15 @@ namespace EconomicSystem
             //记录买入价格
             asset.buyPrice=buyPrice;
 
-            //遍历列表，查找是否有同一个名字的物品
+            //遍历列表，查找有完全相同的物品
             foreach (var itemData in privateOwnedAssets)
             {
-                //有同名物品
-                if (itemData.defName==asset.defName)
+                //材质，defname,品质,耐久度等完全相同的物品
+                if (itemData.defName==asset.defName&&
+                    itemData.quality==asset.quality&&
+                    (itemData.hitPointsPct-asset.hitPointsPct)<10f&&
+                    itemData.stuffDefName==asset.stuffDefName
+                    )
                 {
                     //不创建新物品,直接增加数量。
                     itemData.stackCount+=asset.stackCount;

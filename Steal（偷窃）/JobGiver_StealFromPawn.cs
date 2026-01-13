@@ -63,7 +63,7 @@ namespace EconomicSystem
                 if (victim.Dead || !victim.IsColonist || victim.IsPrisoner || victim.Awake())
                     continue;
 
-                var econ = victim.GetEconomyData();
+                var econ = victim.TryGetEconomyData();
                 if (econ == null) continue;
 
                 // 财富检查

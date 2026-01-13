@@ -25,7 +25,7 @@ namespace EconomicSystem
             __2 = null; // 初始化 out 参数 paidSilver
 
             // 1. 检查是否是殖民者且拥有经济数据
-            CES_PawnEconomyData data = pawn.GetEconomyData();
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
             if (data == null)
             {
                 // 不是殖民者 (访客/囚犯等)，让原始方法继续执行 (使用实体银币)

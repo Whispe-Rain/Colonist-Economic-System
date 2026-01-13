@@ -8,15 +8,24 @@ namespace EconomicSystem
     public static class CES_PawnEconomyExtension
     {
         //得到Pawn的经济数据
-        public static CES_PawnEconomyData GetEconomyData(this Pawn pawn)
+        public static CES_PawnEconomyData TryGetEconomyData(this Pawn pawn)
         {
-            if (pawn == null || !pawn.IsColonist)
-                return null;
-
             return Current.Game
                 .GetComponent<CES_EconomyGameComponent>()
-                ?.GetOrCreateDataFor(pawn);
+                ?.TryGetEconomyData(pawn);
+        }
+        
+        // 明确创建（仅在“入队/入殖民地”事件中使用）
+        public static CES_PawnEconomyData EnsureEconomyData(this Pawn pawn)
+        {
+            var comp = Current.Game.GetComponent<CES_EconomyGameComponent>();
+            return comp?.CreateOrEnableEconomyDataFor(pawn);
         }
         
     }
+    
+
+    
+
+    
 }

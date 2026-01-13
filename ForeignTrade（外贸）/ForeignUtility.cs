@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
+using UnityEngine;
 using Verse;
 
 namespace EconomicSystem
@@ -93,6 +94,40 @@ namespace EconomicSystem
             // 如果找不到合适的，返回 null
             return null; 
         }
+        
+        /// <summary>
+        /// 选择随机材质
+        /// </summary>
+        /// <param name="def">物品def</param>
+        /// <returns></returns>
+        public static ThingDef ChooseSafeRandomStuff(ThingDef def)
+        {
+            //该物品不需要材质
+            if (!def.MadeFromStuff)
+                return null;
+
+            //得到所有的材质
+            var allowed = GenStuff.AllowedStuffsFor(def);
+            if (allowed == null || !allowed.Any())
+            {
+                Log.Warning($"[CES] No allowed stuff for {def.defName}");
+                return null;
+            }
+            
+            //只生成符合该物品科技等级的材质
+            allowed = allowed
+                .Where(s => s.techLevel <=def.techLevel)
+                .ToList();
+
+            // 权重随机：便宜的更常见
+            return allowed.RandomElementByWeight(stuff =>
+            {
+                // 越贵，权重越低
+                return 1f / Mathf.Sqrt(stuff.BaseMarketValue + 1f);
+            });
+        }
+        
+
         
     }
 }

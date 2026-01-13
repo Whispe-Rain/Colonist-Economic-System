@@ -93,7 +93,7 @@ namespace EconomicSystem
         /// </summary>
         private void ProcessPawnWage(Pawn pawn, MapComponent_ColonyEconomy economy)
         {
-            var data = pawn.GetEconomyData();
+            var data = pawn.TryGetEconomyData();
             
             if (data == null)
                 return;
@@ -196,7 +196,7 @@ namespace EconomicSystem
 
         private void ProcessPawnTax(Pawn pawn, MapComponent_ColonyEconomy economy)
         {
-            CES_PawnEconomyData data = pawn.GetEconomyData();
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
             if (data==null)
                 return;
             
@@ -213,7 +213,7 @@ namespace EconomicSystem
             silver.stackCount = TaxToPay;
             GenSpawn.Spawn(silver, pawn.Position, pawn.Map);
             
-            Log.Warning($"{pawn.LabelShort}成功缴纳个人所得税:{data.Tax}");
+            Log.Warning($"{pawn.LabelShort}成功缴纳个人所得税:{data.Tax:F0}");
         }
     }
     

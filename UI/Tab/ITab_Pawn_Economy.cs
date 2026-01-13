@@ -53,8 +53,9 @@ namespace EconomicSystem
         {
             get
             {
+                var comp = Current.Game.GetComponent<CES_EconomyGameComponent>();
                 Pawn pawn = this.Pawn;
-                return pawn != null && pawn.IsColonist && !pawn.Dead&&!pawn.IsSlave&&!pawn.IsGhoul;
+                return comp.ShouldHaveEconomyData(pawn) && pawn.TryGetEconomyData().active;
             }
         }
 
@@ -63,9 +64,9 @@ namespace EconomicSystem
             Rect rect = new Rect(0f, 0f, size.x, size.y).ContractedBy(10f);
 
             Pawn pawn = Pawn;
-            var data = pawn?.GetEconomyData();
+            var data = pawn?.TryGetEconomyData();
 
-            if (pawn == null || data == null)
+            if (pawn == null || data == null )
             {
                 Widgets.Label(rect, "数据获取失败。");
                 return;
@@ -393,7 +394,20 @@ namespace EconomicSystem
                 }
 
                 // 5. 工具提示
-                TooltipHandler.TipRegion(fullRowRect, () => tempThing.DescriptionDetailed, assetData.GetHashCode());
+                TooltipHandler.TipRegion(fullRowRect, () =>
+                {
+                    String tips = ""; 
+                    //有材质，几乎可以判断是一件装备或者武器
+                    if (assetData.stuffDefName!=null)
+                    {
+                         tips =
+                            $"材质:{assetData.stuffDefName}  品质:{assetData.quality}  耐久:{assetData.hitPointsPct * 100}%";
+                    }
+                    
+                    return tempThing.DescriptionDetailed+"\n"+
+                           tips;
+                }, assetData.GetHashCode());
+                
                 TooltipHandler.TipRegion(
                     priceRect,
                     $"{changeStr}:{priceChange*100:F0}%|{assetData.RecreateThing().MarketValue*assetData.stackCount*priceChange:F0}￥"

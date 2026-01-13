@@ -30,7 +30,7 @@ namespace EconomicSystem.Transaction_交易_
                 if (pawn2 == pawn) continue; 
     
                 // 2. 只筛选殖民者（或友军），并且要求有经济数据
-                CES_PawnEconomyData data = pawn2.GetEconomyData();
+                CES_PawnEconomyData data = pawn2.TryGetEconomyData();
                 if (pawn2.IsColonist && data != null && data.virtualWallet > 15) 
                 {
                     allColonist.Add(pawn2);

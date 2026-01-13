@@ -28,13 +28,13 @@ namespace EconomicSystem
                 return ThoughtState.Inactive;
             }
 
-            var econ = p.GetEconomyData();
-            if (econ == null)
+            var data = p.TryGetEconomyData();
+            if (data == null||!data.active)
             {
                 return ThoughtState.Inactive;
             }
 
-            float wallet = econ.virtualWallet;
+            float wallet = data.virtualWallet;
             
             // 1. 获取殖民地硬通货总量
             float colonySilver = CES_EconomyUtility.GetColonySilverTotal(p.Map);

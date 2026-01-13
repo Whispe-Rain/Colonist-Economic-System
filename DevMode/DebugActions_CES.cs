@@ -21,7 +21,7 @@ namespace EconomicSystem
                 return null;
             }
 
-            CES_PawnEconomyData econ = pawn.GetEconomyData(); 
+            CES_PawnEconomyData econ = pawn.TryGetEconomyData(); 
             
             if (econ == null)
             {

@@ -33,7 +33,7 @@ namespace EconomicSystem
             }
 
             // 1. 检查是否有待售的私人物品 (使用您原来的方法)
-            CES_PawnEconomyData data = pawn.GetEconomyData();
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
             if (data == null || data.privateOwnedAssets.NullOrEmpty())
             {
                 return null;
@@ -47,9 +47,19 @@ namespace EconomicSystem
                 return null;
             }
             
+            int now = Find.TickManager.TicksGame;
+            string cdKey0 = $"ForeignTradeFail:{itemToSell.defName}";
+            // 该物品交易失败后是否在CD中？
+            if (data.coolDowns.TryGetValue(cdKey0, out int failTick))
+            {
+                if (now < failTick)
+                {
+                    return null;
+                }
+                    
+            }            
             
             string cdKey = $"ForeignTrade:{itemToSell.defName}";
-            int now = Find.TickManager.TicksGame;
             // 该物品的交易是否在CD 中？
             if (data.coolDowns.TryGetValue(cdKey, out int untilTick))
             {

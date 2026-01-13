@@ -22,8 +22,8 @@ namespace EconomicSystem
         {
             LocalTargetInfo targetPawn = job.GetTarget(TargetIndex.A);
 
-            var econ = pawn.GetEconomyData();
-            if (econ == null)
+            var data = pawn.TryGetEconomyData();
+            if (data == null)
             {
                 //Log.Warning($"[CES_DEBUG] JobDriver denied: Pawn {pawn.NameShortColored} has no Economy Data.");
                 return false;
@@ -62,7 +62,7 @@ namespace EconomicSystem
                     return;
                 
                 // 2. 找到并从 Pawn 的私人资产中移除（防止交易中途卖掉）
-                CES_PawnEconomyData data = this.pawn.GetEconomyData();
+                CES_PawnEconomyData data = this.pawn.TryGetEconomyData();
                 PrivateItemData itemData = data.privateOwnedAssets.FirstOrDefault(i => i.defName == ItemDefName);
 
                 if (itemData == null)
@@ -120,10 +120,10 @@ namespace EconomicSystem
             yield return Toils_General.Do(delegate
             {
                 // 获取Pawn的经济数据
-                CES_PawnEconomyData data = pawn.GetEconomyData();
+                CES_PawnEconomyData data = pawn.TryGetEconomyData();
 
                 // 如果自身和买方任意一个经济数据不存在，直接结束任务
-                if (data == null || TargetPawn.GetEconomyData() == null)
+                if (data == null || TargetPawn.TryGetEconomyData()== null)
                 {
                     //Log.Warning($"[CES] {pawn.NameShortColored} failed trade: Missing economy data or ItemDefName.");
                     this.EndJobWith(JobCondition.Errored);
@@ -210,7 +210,7 @@ namespace EconomicSystem
                 //盈利售卖日志
                 string history = $"将{itemData.Name.Colorize(Color.yellow)}卖给{targetPawn.NameShortColored}" +
                                  $",赚取+{profit.ToString().Colorize(Color.green)}";
-                data.AddHistory(pawn.GetEconomyData().economicHistory,history);
+                data.AddHistory(pawn.TryGetEconomyData().economicHistory,history);
                 
                
             }
@@ -219,19 +219,19 @@ namespace EconomicSystem
                 //亏损售卖日志
                 string history2 =  $"将{itemData.Name.Colorize(Color.yellow)}麦给{targetPawn.NameShortColored}" +
                                    $",亏损{profit.ToString().Colorize(Color.red)}";
-                data.AddHistory(pawn.GetEconomyData().economicHistory,history2);
+                data.AddHistory(pawn.TryGetEconomyData().economicHistory,history2);
             }
             
             //买家添加物品并付钱给卖家
-            if (targetPawn.GetEconomyData().AddAsset(itemData,salePrice))//相当于货到付款
+            if (targetPawn.TryGetEconomyData().AddAsset(itemData,salePrice))//相当于货到付款
             {
                
                 //生成购买日志
                 string history3 =  $"从{pawn.NameShortColored}花费{salePrice}白银买{itemData.Name.Colorize(Color.yellow)}";
-                targetPawn.GetEconomyData().AddHistory(targetPawn.GetEconomyData().economicHistory,history3);
+                targetPawn.TryGetEconomyData().AddHistory(targetPawn.TryGetEconomyData().economicHistory,history3);
                 
                 // B. 增加虚拟货币
-                targetPawn.GetEconomyData().virtualWallet -= salePrice;
+                targetPawn.TryGetEconomyData().virtualWallet -= salePrice;
                 data.AddMoney(netIncome);
                
             }

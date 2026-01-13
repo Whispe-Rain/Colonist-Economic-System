@@ -18,7 +18,7 @@ namespace EconomicSystem
         
         // 可以根据需要添加更多属性（例如，制造者、名称等）
         
-        public float priceChange;//商品溢价和降价的力度
+        public float priceChange;//商品溢价和降价
 
         public int buyPrice;//买入价
         public int sellPrice;//卖出价
@@ -70,7 +70,9 @@ namespace EconomicSystem
             
             Scribe_Values.Look(ref stuffDefName, "stuffDefName");
             Scribe_Values.Look(ref buyPrice, "buyPrice");
-            Scribe_Values.Look(ref buyPrice, "sellPrice");
+            Scribe_Values.Look(ref sellPrice, "sellPrice");
+            
+            Scribe_Values.Look(ref priceChange, "priceChange");
         }
 
         /// <summary>

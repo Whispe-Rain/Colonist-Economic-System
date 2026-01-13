@@ -9,13 +9,9 @@ namespace EconomicSystem
         protected override bool Satisfied(Pawn pawn)
         {
             // ===== 2.物品条件 =====
-            var data = pawn.GetEconomyData();
+            var data = pawn.TryGetEconomyData();
             if (data == null) {  return false; }
             
-            //首先检测外贸购物CD
-            int now = Find.TickManager.TicksGame;
-            if (now < data.ForeignShoppingTick)
-                return false;
             
             // ===== 1. 基础安全检查 =====
             if (pawn == null || pawn.Map == null) {  return false; }

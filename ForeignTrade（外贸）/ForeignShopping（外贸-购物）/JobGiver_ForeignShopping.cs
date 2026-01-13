@@ -14,6 +14,10 @@ namespace EconomicSystem
         
         protected override Job TryGiveJob(Pawn pawn)
         {
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
+            
+            
+            
             //获得地图上所有可以交易的成员
             List<Pawn> viableTraders= pawn.Map.mapPawns.AllPawns
                 .Where(p => ForeignUtility.IsViableTrader(pawn, p)) // 预先筛选
@@ -46,6 +50,19 @@ namespace EconomicSystem
             //防止追逐太远
             if ((pawn.Position - targetTrader.Position).LengthHorizontalSquared > MaxTradeDistance * MaxTradeDistance)
                 return null;
+            
+            //与该商人购物失败冷却CD
+            int now = Find.TickManager.TicksGame;
+            string cdKey = $"ShoppingFail:{targetTrader.Name}";
+            // 该物品交易失败后是否在CD中？
+            if (data.coolDowns.TryGetValue(cdKey, out int failTick))
+            {
+                if (now < failTick)
+                {
+                    return null;
+                }
+                    
+            } 
             
             // 4. 创建 Job
             Job job = JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("CES_ForeignShopping"), targetTrader);

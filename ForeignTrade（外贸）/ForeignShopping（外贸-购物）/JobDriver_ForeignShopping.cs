@@ -62,7 +62,7 @@ namespace EconomicSystem
             yield return Toils_General.Do(delegate
             {
                 // 获取Pawn的经济数据
-                CES_PawnEconomyData data = pawn.GetEconomyData();
+                CES_PawnEconomyData data = pawn.TryGetEconomyData();
 
                 //随机本次购买预算
                 int budget = Rand.Range(50, 400);
@@ -73,7 +73,7 @@ namespace EconomicSystem
                 {
                     return;
                 }
-
+                
                 // 尝试执行交易逻辑
                 ExecuteTradeAndSettle(pawn, data, budget);
             });
@@ -81,9 +81,8 @@ namespace EconomicSystem
 
         public void ExecuteTradeAndSettle(Pawn pawn, CES_PawnEconomyData data, int budget)
         {
-            // 随机判定交易是否成功 
-            //基础50%失败率，社交等级可以降低失败率，20级降低20%，及30%的失败率
-            float fail = 0.5f - pawn.skills.GetSkill(SkillDefOf.Social).Level * 0.01f;
+            // 随机判定交易是否成功,40%拒绝购买 
+            float fail = 0.4f;
             if (Rand.Chance(fail)) //小人拒绝购买
             {
                 MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "购物失败".Translate(), Color.red, 4f);
@@ -92,9 +91,12 @@ namespace EconomicSystem
             
             // 1. 随机选择一个可注入的物品定义
             // 我们选择一个最大价值略高于目标价值的物品，防止只选到低价值的。
-            ThingDef defToInject = ForeignUtility.GetRandomInThingsDef(budget * 2).RandomElement();
-            ;
-            Thing ToInject = ThingMaker.MakeThing(defToInject);
+            ThingDef defToInject = ForeignUtility.GetRandomInThingsDef(budget * 2).RandomElement(); 
+            
+            //为该物品选择材质，如果需要的话。
+            ThingDef stuff = ForeignUtility.ChooseSafeRandomStuff(defToInject);
+            
+            Thing ToInject = ThingMaker.MakeThing(defToInject,stuff);
             if (defToInject != null)
             {
                 //得到该物品的市场价
@@ -103,14 +105,19 @@ namespace EconomicSystem
                 // 2. 计算可以兑换的数量
                 // 数量 = floor( 目标价值 / 单个物品市场价值 )
                 int count = Mathf.FloorToInt(budget / itemMarketValue);
+                if (count <= 0)
+                {
+                    //一个都买不起,直接结束。
+                    return;
+                }
 
-                // 3. 计算实际兑换的价值
+                // 3. 计算总价格
                 int actualValue = Mathf.RoundToInt(count * itemMarketValue);
 
                 // 4. 注入到 Pawn 的私有背包数据中
                 data.VirtualAndMarkAsset(ToInject, count);
 
-                // 5. 将兑换后的剩余价值（找零）以白银形式注入 (可选，用于精确匹配)
+                // 5. 将兑换后的剩余价值（找零）以白银形式注入
                 int remainder = budget - actualValue;
                 if (remainder > 0)
                 {
@@ -133,14 +140,18 @@ namespace EconomicSystem
                     $"与{TraderPawn.NameShortColored}进行贸易，购买了{defToInject.label.Colorize(Color.cyan)} x{count}，找零{remainder}白银";
                 data.AddHistory(data.economicHistory, history);
 
-                //为成功交易的物品设置冷却CD，防止刚到手就卖掉。
-                string cdKey = $"ForeignTrade:{defToInject.defName}";
+                //设置冷却CD，防止刚到手就卖给商队。
                 int now = Find.TickManager.TicksGame;
+                string cdKey = $"ForeignTrade:{defToInject.defName}";
                 data.coolDowns[cdKey] = now + 60000; // 60000 ticks = 1天
                 
+                //设置冷却CD，防止刚到手就卖掉其他小人（其他小人又反向卖给商队）。
+                string cdKey2 = $"Trade:{defToInject.defName}";
+                data.coolDowns[cdKey2] = now + 60000; // 60000 ticks = 1天
+                
                 //购物CD（游戏中1小时~3小时）浮动
-                data.ForeignShoppingTick = 
-                    Find.TickManager.TicksGame + Rand.Range(2500, 7500);
+                string cdKey3 = $"ShoppingFail:{TraderPawn.Name}";
+                data.coolDowns[cdKey3] = now + Rand.Range(2500, 7500); // 1~3个小时
             }
         }
     }

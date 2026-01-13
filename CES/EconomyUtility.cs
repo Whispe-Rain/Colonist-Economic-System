@@ -15,7 +15,7 @@ namespace EconomicSystem
             if (amount <= 0 || pawn == null || pawn.Map == null) return true;
 
             int intAmount = Mathf.FloorToInt(amount);
-            CES_PawnEconomyData data = pawn.GetEconomyData();
+            CES_PawnEconomyData data = pawn.TryGetEconomyData();
             
             if (data == null || data.virtualWallet < intAmount)
             {

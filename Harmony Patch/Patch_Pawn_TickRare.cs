@@ -30,7 +30,7 @@ namespace EconomicSystem
                 if (EconomicStressDef == null) return;
             }
 
-            var data = __instance.GetEconomyData();
+            var data = __instance.TryGetEconomyData();
             if (data == null) return;
 
             float unpaid = data.unpaidWage;

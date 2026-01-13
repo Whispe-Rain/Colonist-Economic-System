@@ -10,8 +10,8 @@ namespace EconomicSystem
 {
     public class JoyGiver_ColonistShopping : JoyGiver
     {
-        private const int CooldownTicks = 500; 
-        private static readonly Dictionary<Pawn, int> lastTryTick = new();
+        /*private const int CooldownTicks = 500; 
+        private static readonly Dictionary<Pawn, int> lastTryTick = new();*/
         
         public override float GetChance(Pawn pawn)
         {
@@ -22,9 +22,9 @@ namespace EconomicSystem
             }
             
             // 2. 经济检查
-            var econ = pawn.GetEconomyData();
+            var data = pawn.TryGetEconomyData();
             // 检查虚拟余额是否足以进行任何购物
-            if (econ == null || econ.virtualWallet < 50f) // 假设最低消费门槛为 50 银
+            if (data == null || data.virtualWallet < 50f) // 假设最低消费门槛为 50 银
             {
                 return 0f;
             }
@@ -43,7 +43,7 @@ namespace EconomicSystem
     
             // 假设：在 15银时因子为 0.5，在 5000银时因子为 2.0 (您可以根据需要调整最大/最小影响)
             // Mathf.InverseLerp(min, max, value) 返回 0.0 到 1.0 之间的值
-            float walletScale = Mathf.InverseLerp(50f, 2000f, econ.virtualWallet); 
+            float walletScale = Mathf.InverseLerp(50f, 2000f, data.virtualWallet); 
     
             // 将 0~1 的 walletScale 映射到 0.5~2.0 的因子范围 (线性映射)
             float walletFactor = 0.5f + walletScale * 1.5f; 
@@ -51,20 +51,19 @@ namespace EconomicSystem
             // 最终概率
             float finalChance = baseShoppingChance * walletFactor;
             
-            Log.Warning("finalChance:"+finalChance);
             return finalChance; 
         }
 
         public override Job TryGiveJob(Pawn pawn)
         {
-            int now = Find.TickManager.TicksGame;
+            /*int now = Find.TickManager.TicksGame;*/
 
-            if (lastTryTick.TryGetValue(pawn, out int last))
+            /*if (lastTryTick.TryGetValue(pawn, out int last))
             {
                 if (now - last < CooldownTicks)
                     return null;
             }
-            lastTryTick[pawn] = now;
+            lastTryTick[pawn] = now;*/
             
             
     

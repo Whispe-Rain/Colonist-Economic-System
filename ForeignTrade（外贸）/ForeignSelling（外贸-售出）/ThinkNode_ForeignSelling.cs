@@ -20,7 +20,7 @@ namespace EconomicSystem
             if (pawn.Drafted || pawn.jobs?.curJob?.playerForced == true) { return false; }
     
             // ===== 2.物品条件 =====
-            var econ = pawn.GetEconomyData();
+            var econ = pawn.TryGetEconomyData();
             if (econ == null) {  return false; }
 
             // 重点检查此处：殖民者的资产数量是否大于 0
