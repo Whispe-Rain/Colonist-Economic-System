@@ -70,6 +70,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="CES\CESUtility.cs" />
         <Compile Include="CES\WageUtility.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobDriver_ForeignSelling.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobGiver_ForeignSelling.cs" />
@@ -78,6 +79,8 @@
         <Compile Include="ForeignTrade（外贸）\ForeignShopping（外贸-购物）\JobGiver_ForeignShopping.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignShopping（外贸-购物）\ThinkNode_ForeignShopping.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignUtility.cs" />
+        <Compile Include="Harmony Patch\CES_Pawn_SpawnSetup_Patch.cs" />
+        <Compile Include="Harmony Patch\Patch_ClearOrder_NoError.cs" />
         <Compile Include="Harmony Patch\Patch_Pawn_GuestTracker_Economy.cs" />
         <Compile Include="Harmony Patch\Patch_Pawn_SetFaction_Economy.cs" />
         <Compile Include="Steal（偷窃）\JobDriver_GoStealing.cs" />

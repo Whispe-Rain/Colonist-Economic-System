@@ -401,7 +401,7 @@ namespace EconomicSystem
                     if (assetData.stuffDefName!=null)
                     {
                          tips =
-                            $"材质:{assetData.stuffDefName}  品质:{assetData.quality}  耐久:{assetData.hitPointsPct * 100}%";
+                            $"材质:{assetData.stuffDefName}+“\n” 品质:{assetData.quality}+“\n” 耐久:{(assetData.hitPointsPct * 100):F0}%";
                     }
                     
                     return tempThing.DescriptionDetailed+"\n"+

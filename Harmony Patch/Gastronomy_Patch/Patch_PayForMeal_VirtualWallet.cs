@@ -24,13 +24,11 @@ namespace EconomicSystem
             
             __2 = null; // 初始化 out 参数 paidSilver
 
-            // 1. 检查是否是殖民者且拥有经济数据
+            // 1. 检查是否拥有经济数据
             CES_PawnEconomyData data = pawn.TryGetEconomyData();
-            if (data == null)
-            {
-                // 不是殖民者 (访客/囚犯等)，让原始方法继续执行 (使用实体银币)
-                return true; 
-            }
+            
+            if (!CESUtility.ShouldIntercept(pawn))
+                return true;
             
             // 2. 获取餐厅和待支付金额 (必须重新执行原始方法的 LINQ 查询逻辑)
             // 原始代码:
@@ -73,7 +71,7 @@ namespace EconomicSystem
                     __2 = silver; 
                     restaurantDebt.restaurant.Debts.PayDebt(pawn, requiredAmount);
 
-                    Log.Message($"[CES] {pawn.Name.ToStringShort} 成功使用 **虚拟钱包** 支付了 {requiredAmount} 银币餐费。");
+                    Log.Message($"[CES] {pawn.Name.ToStringShort} 支付了 {requiredAmount} 银币餐费。");
                     
                     // 5. 阻止原始方法执行
                     return false; 

@@ -4,6 +4,7 @@ using RimWorld;
 using RimWorld.Planet;
 using UnityEngine;
 using Verse;
+using Verse.AI.Group;
 
 namespace EconomicSystem
 {
@@ -15,26 +16,32 @@ namespace EconomicSystem
         // 辅助方法 
         public static bool IsViableTrader(Pawn forPawn, Pawn p)
         {
-            const float MaxTradeDistance = 40f; 
+            const float MaxTradeDistance = 40f;
 
-            // ** 1. 核心检查：是否是真正的访客或商队 Pawn **
-            // 检查 TraderKind 是否存在，这几乎是识别商队 Pawn 的唯一方法
-            if (p.TraderKind == null)
-            {
-                // 排除掉所有没有 TraderKind 的普通访客 Pawn、囚犯、友方殖民者等。
+            if (!p.Spawned || p.Downed)
                 return false;
-            }
-    
-            // ** 2. 基础状态和安全检查 **
-            return p.Spawned // 必须在地图上
-                   && !p.Downed // 不能倒地
-                   && !p.HostileTo(forPawn) // 必须非敌对
-                   && p.Faction != Faction.OfPlayer // 必须是非玩家派系
-                   && p.IsFormingCaravan() == false // 排除正在组建大篷车的 Pawn
-                   && p.IsPrisoner == false // 排除囚犯
-                   // ** 3. 距离检查 **
-                   && forPawn.Position.InHorDistOf(p.Position, MaxTradeDistance);
+
+            if (p.Faction == null || p.Faction == Faction.OfPlayer)
+                return false;
+
+            if (p.HostileTo(forPawn))
+                return false;
+
+            if (p.IsPrisoner || p.IsFormingCaravan())
+                return false;
+
+            // ⭐ 核心区分点：必须是真正的商队
+            Lord lord = p.GetLord();
+            if (lord?.LordJob is not LordJob_TradeWithColony)
+                return false;
+
+            // TraderKind 作为“补充条件”，而不是核心条件
+            if (p.TraderKind == null)
+                return false;
+
+            return forPawn.Position.InHorDistOf(p.Position, MaxTradeDistance);
         }
+
         
         public static PrivateItemData GetRandomItemToSell(List<PrivateItemData> items)
         {

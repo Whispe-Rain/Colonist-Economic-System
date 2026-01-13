@@ -217,18 +217,14 @@ namespace EconomicSystem
 
                             // 5. 将兑换后的剩余价值（找零）以白银形式注入 (可选，用于精确匹配)
                             int remainder = salePrice - actualValue;
-                            if (remainder > 0)
-                            {
-                                data.AddMoney(remainder);
-                            }
-
                             // 6. 反馈 Mote 和日志
                             string feedbackText = $"以物易物: +{defToInject.label} x{count}";
                             if (remainder > 0)
                             {
+                                data.AddMoney(remainder);
                                 feedbackText += $" (+{remainder} 白银)";
                             }
-
+                            
                             MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, feedbackText, Color.cyan, 3.5f);
 
                             string history =
