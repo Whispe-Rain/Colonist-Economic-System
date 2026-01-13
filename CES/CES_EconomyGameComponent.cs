@@ -113,7 +113,7 @@ namespace EconomicSystem
 
            
         }
-        
+        ///判断该Pawn是否有资格接入经济系统
         public bool ShouldHaveEconomyData(Pawn pawn)
         {
             if (pawn == null) return false;
@@ -131,6 +131,8 @@ namespace EconomicSystem
             return pawn.IsColonist;
             // 以后要支持囚犯？改这里就行
         }
+        
+        
         
         public override void LoadedGame()
         {

@@ -88,21 +88,5 @@ namespace EconomicSystem
             return totalCorrection;
         }
         
-        /// <summary>
-        /// 是否允许接入经济系统
-        /// </summary>
-        /// <param name="pawn"></param>
-        /// <returns></returns>
-        public static bool ShouldHaveEconomyData(Pawn pawn)
-        {
-            if (pawn == null) return false;
-            if (pawn.Faction != Faction.OfPlayer) return false;
-            if (pawn.IsGhoul) return false;
-            if (pawn.IsSlave) return false;
-
-            return pawn.IsColonist;
-            // 以后要支持囚犯？改这里就行
-        }
-        
     }
 }

@@ -70,6 +70,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="CES\CESUtility.cs" />
         <Compile Include="CES\WageUtility.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobDriver_ForeignSelling.cs" />
         <Compile Include="ForeignTrade（外贸）\ForeignSelling（外贸-售出）\JobGiver_ForeignSelling.cs" />
